@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head lang="en">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <script src="fakeclues.js"></script>
+    <script src="jscrossword_combined.js"></script>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/darkreader/4.9.51/darkreader.js" integrity="sha512-ZPM2N2jy+xyiZTw79N8gO1fznPeY8HN+53ddx+PqOJ0+WRYBdsKNhtLtecl1/+tGvV9MclzopGNm4AXb/azn2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>
+      Fake Clue Puzzle Creator
+    </title>
+</head>
+
+<body>
+<header>
+  <nav>
+    <!--
+    <a href="index.html">Home</a>
+    <a href="credits.html">Credits</a>
+  -->
+  </nav>
+  <h1>"Fake Clue" Puzzle Creator</h1>
+  <p>Take a regular crossword and make one in which the clues are decoupled from the entries.</p>
+</header>
+
+<main>
+  <input type="file" id="files" name="files" accept=".puz,.xml,.jpz,.xpz,.ipuz,.cfp" />
+  <br />
+  <input type="checkbox" id="preserve_words"><label for="preserve_words">Preserve words</label>
+  <br />
+  <input type="checkbox" id="sort_second_clues"><label for="sort_second_clues">Sort only second clue list</label>
+  <br />
+  <button type="button" id="submit_button">Go!</button>
+</main>
+<script type="text/javascript">
+
+
+var MY_GLOBAL;
+
+/** Handling form submission **/
+function handleFileSelect(evt) {
+    const file_elt = document.getElementById('files');
+    const files = file_elt.files; // FileList object
+
+    // files is a FileList of File objects.
+    for (let i = 0, f; f = files[i]; i++) {
+        // Only process small files.
+        if (f.size >= 75000) {
+            alert('This file is too big.');
+            continue;
+        }
+        if (f) {
+            //console.log(f);
+            var filename = f.name.toLowerCase();
+            const r = new FileReader();
+            r.onload = (function (theFile) {
+                return function (e) {
+                    let contents = e.target.result;
+                    var xw_constructor = new JSCrossword();
+                    var xw;
+                    xw = xw_constructor.fromData(contents);
+                    //xw = xw_constructor.fromIpuz(contents);
+                    console.log(xw);
+
+                    var thisGrid = new xwGrid(xw.cells);
+                    console.log(thisGrid);
+
+                    MY_GLOBAL = xw;
+                };
+            })(f);
+            r.readAsBinaryString(f);
+        } else {
+            alert("Failed to load file");
+        }
+    }
+}
+document.getElementById('submit_button').addEventListener('click', handleFileSelect, false);
+</script>
+
+</body>
+</HTML>
