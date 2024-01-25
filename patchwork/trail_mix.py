@@ -47,20 +47,21 @@ OOOOQQQRRRRRP
 
 #%% Set up the grid
 puzzle = []
-N = len(grid)
-for y in range(N):
+height = len(grid)
+width = len(grid[0])
+for y in range(height):
     row = []
-    for x in range(N):
+    for x in range(width):
         cell = dict()
         if x == 0:
             cell["cell"] = y+1
         else:
             cell["cell"] = "0"
         bars = ''
-        if x < N-1:
+        if x < width-1:
             if grid[y][x+1] != grid[y][x]:
                 bars += 'R'
-        if y < N-1:
+        if y < height-1:
             if grid[y+1][x] != grid[y][x]:
                 bars += 'B'
         if bars:
