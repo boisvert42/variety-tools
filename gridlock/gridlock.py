@@ -9,10 +9,16 @@ import pypuz
 import json
 
 # Set your filename here
-FILENAME = 'gridlock.ipuz'
+FILENAME = 'Spirits_Are_High.ipuz'
 
 # Set your "clues" here
-WORDS = ["ALLIGATOR", "CLEARANCE", "NOCTURNAL", "RATIONALE", "TENACIOUS"]
+WORDS = """
+EBULLIENT
+FANATICAL
+IGNORANCE
+NECTARINE
+REDUCTION
+""".strip().split('\n')
 
 pz = pypuz.Puzzle().fromIPuz(FILENAME)
 
@@ -35,8 +41,8 @@ for cell in pz.grid.cells:
         cell.isBlock = False
         cell.isEmpty = True
     # For dark mode, we change the background color of cells
-    if not cell.isEmpty:
-        cell.style['color'] = 'FFFFFF'
+    #if not cell.isEmpty:
+    #    cell.style['color'] = 'FFFFFF'
     # Set the "value" in certain cases
     if cell.y in (0, 4, 5, 9, 10, 14) or cell.x in (0, 4, 5, 9, 10, 14):
         cell.value = cell.solution
@@ -68,3 +74,5 @@ j['intro'] = j['notes']
 
 with open(outfile, 'w') as fid:
     json.dump(j, fid)
+    
+# The next step is to open in the Nexus Solver, make a JPZ, and change cells to "clue" type
