@@ -11,6 +11,12 @@ import make_hex_vpuz as mhv
 import random
 import networkx as nx
 import json
+import subprocess
+import func_timeout
+import time
+
+# Time we give to Qxw
+TIMEOUT_TIME = 30
 
 def find_all_simple_paths(graph, min_len=6, max_len=15):
     """Find all simple paths within the length constraints."""
@@ -29,91 +35,187 @@ def find_all_simple_paths(graph, min_len=6, max_len=15):
     random.shuffle(ret)
     return ret
 
+def run_qxw(filename, timeout=TIMEOUT_TIME):
+    command = ["C:\\Program Files (x86)\\Qxw\\Qxw.exe", "-b", filename]
+    try:
+        # Use func_timeout to run the external command with a timeout
+        result = func_timeout.func_timeout(timeout, subprocess.run, args=(command,), kwargs={
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE,
+            "check": True,
+            "text": True
+        })
+        
+        # If the process completes successfully, return True along with the output
+        return True, result.stdout, result.stderr
+    except func_timeout.FunctionTimedOut:
+        print(f"Command timed out after {timeout} seconds")
+        return False, None, None
+    except subprocess.CalledProcessError as e:
+        #print(f"Command failed with error: {e}")
+        return False, e.stdout, e.stderr
+
 #%% Create G and find paths
 G = mhg.create_hex_graph()
 # Finding paths is slow
-paths = find_all_simple_paths(G, min_len=5, max_len=11)
+all_paths = find_all_simple_paths(G, min_len=5, max_len=12)
 
-#%% Set up the optimization problem
-# List of tuples
-T = list(G.nodes())  # Your list of tuples
+#%% Helper functions to set up the optimization problem and run Qxw
 
-# List of paths (each path is a list of tuples)
-# We take a subset to speed up the optimization
-random.shuffle(paths)
-P = paths[:100000]  # Your list of paths
+def create_pathfinder(G, paths, min_paths=28, max_paths=32, total_paths=50000):
+    """
+    Return a list of paths that satisfy the pathfinder requirements
+    * No path self-intersects
+    * Each hex (node) is contained in two paths
+    """
+    # List of tuples
+    T = list(G.nodes())  # Your list of tuples
+    
+    # List of paths (each path is a list of tuples)
+    # We take a subset to speed up the optimization
+    random.shuffle(paths)
+    P = paths[:total_paths]  # Your list of paths
+    
+    # Define the lengths of each path
+    #path_lengths = [len(path) for path in P]
+    
+    # Initialize MIP model
+    m = Model()
+    m.verbose = 0
+    
+    # Create binary variables for each path
+    x = [m.add_var(var_type=BINARY) for _ in P]
+    
+    # Add constraints: each tuple should appear in exactly two selected paths
+    for t in T:
+        m += xsum(x[i] for i, path in enumerate(P) if t in path) == 2
+    
+    # Add constraints for paths of specific lengths
+    # Example: two paths of length 11
+    #m += xsum(x[i] for i in range(len(P)) if path_lengths[i] == 11) >= 2
+    
+    # Example: one path of length 12, 13
+    #m += xsum(x[i] for i in range(len(P)) if path_lengths[i] == 13) == 1
+    
+    # Add constraints on the number of paths
+    m += xsum(x) >= min_paths
+    m += xsum(x) <= max_paths
+    
+    # (Optional) Set an objective function, e.g., minimize the number of selected paths
+    #m.objective = xsum(x)
+    # Maximize the spread in path lengths
+    #m.objective = -xsum(((path_lengths[i] - 9) ** 2) * x[i] for i in range(len(P)))
+    
+    # Run the optimization
+    m.optimize()
+    
+    # Extract the selected paths
+    selected_paths = [P[i] for i in range(len(P)) if x[i].x >= 0.99]
+    return selected_paths
 
-# Define the lengths of each path
-path_lengths = [len(path) for path in P]
+def make_qxd_file(selected_paths, filename="hex.qxd", wordlist="stwl_no_plurals.txt", words = {}):
+    """
+    Given selected paths, make a file for QXw to process
+    """
+    # Sort "selected paths" from top to bottom
+    selected_paths = sorted(selected_paths, key=lambda x: (x[0][0], x[0][1]))
 
-# Initialize MIP model
-m = Model()
-m.verbose = 0
-
-# Create binary variables for each path
-x = [m.add_var(var_type=BINARY) for _ in P]
-
-# Add constraints: each tuple should appear in exactly two selected paths
-for t in T:
-    m += xsum(x[i] for i, path in enumerate(P) if t in path) == 2
-
-# Add constraints for paths of specific lengths
-# Example: two paths of length 11
-#m += xsum(x[i] for i in range(len(P)) if path_lengths[i] == 11) >= 2
-
-# Example: one path of length 10
-#m += xsum(x[i] for i in range(len(P)) if path_lengths[i] == 10) == 1
-
-# Add constraints on the number of paths
-m += xsum(x) >= 32
-m += xsum(x) <= 35
-
-# (Optional) Set an objective function, e.g., minimize the number of selected paths
-#m.objective = xsum(x)
-# Maximize the spread in path lengths
-#m.objective = -xsum(((path_lengths[i] - 9) ** 2) * x[i] for i in range(len(P)))
-
-# Run the optimization
-m.optimize()
-
-# Extract the selected paths
-selected_paths = [P[i] for i in range(len(P)) if x[i].x >= 0.99]
-
-print("Selected paths:", selected_paths)
-
-# Make a qxd file
-# entries will be xx_yy
-
-# Sort "selected paths" from top to bottom
-selected_paths = sorted(selected_paths, key=lambda x: (x[0][0], x[0][1]))
-
-qxd = '''.DICTIONARY 1 stwl_no_plurals.txt
+    qxd = f'''.DICTIONARY 1 {wordlist}
 .USEDICTIONARY 1
 .RANDOM 1
 '''
 
-for path in selected_paths:
-    mystr = ''
-    for v1 in path:
-        x1, x2 = map(lambda x:str(x).zfill(2), v1)
-        mystr += f"{x1}_{x2} "
-    mystr = mystr[:-1]
-    mystr += '\n'
-    qxd += mystr
+    for i, path in enumerate(selected_paths):
+        mystr = ''
+        for v1 in path:
+            x1, x2 = map(lambda x:str(x).zfill(2), v1)
+            mystr += f"{x1}_{x2} "
+        mystr = mystr[:-1]
+        if words.get(i):
+            mystr += f" ={words[i]}"
+        mystr += '\n'
+        qxd += mystr
 
-print(qxd)
+    with open(filename, "w") as fid:
+        fid.write(qxd)
+        
+    return filename
 
-# Write a file named hex.qxd with the `qxd` string as its contents
-# You can then fill this (on Windows, with Qxw) via
-# "C:\Program Files (x86)\Qxw\Qxw.exe" -b hex.qxd  1>output.txt 2>errors.txt
-# Note that this will run in the background -- you can monitor it in Task Manager
-# Note that you can modify the file if you want to include words
-# for instance, you can change a line to
-# 07_00 06_00 06_01 05_01 04_00 03_00 =SERENE
+#%% Find paths and run Qxw
+loop_count = 0
+while True:
+    loop_count += 1
+    
+    print(f"Running loop {loop_count}")
+    
+    # Find some paths
+    print("Building paths ...")
+    selected_paths = create_pathfinder(G, all_paths, min_paths=35, max_paths=36)
+    
+    # Write a qxd file
+    filename = make_qxd_file(selected_paths)
+    
+    # Run the external command
+    print("Running Qxw ...")
+    success, stdout, stderr = run_qxw(filename, timeout=30)
+    
+    if success:
+        print("Qxw completed successfully!")
+        print(f"stdout:\n{stdout}")
+        print(f"stderr:\n{stderr}")
+        break
+    else:
+        print("Qxw did not find fill, retrying...")
+        print()
+        #if stdout:
+        #    print(f"stdout:\n{stdout}")
+        #if stderr:
+        #    print(f"stderr:\n{stderr}")
+    
+    # Optional delay between retries
+    #time.sleep(1)
+    
+# keep a copy just in case
+stdout_orig = stdout
+    
+#%% Go back and improve the fill
+words = {}
 
-#%% Paste the results of Qxw here
-qxw_out = '''
-'''
+# Write a qxd file
+filename = make_qxd_file(selected_paths, words=words)
+
+# Run the external command
+print("Running Qxw ...")
+success, stdout, stderr = run_qxw(filename, timeout=300)
+if success:
+    print(stdout)
+else:
+    print("Could not find fill")
+
+#%% Check for dupes
+# Convert string to array
+qxw_arr = stdout.strip().split('\n')
+
+# Extract words
+words = []
+for line in qxw_arr:
+    if line.startswith('# '):
+        words.append(line[2:])
+        
+DUPE_LENGTH = 4
+dupe_dict = dict()
+for w in words:
+    for i in range(len(w) - DUPE_LENGTH + 1):
+        w1 = w[i:i+DUPE_LENGTH]
+        dupe_dict[w1] = dupe_dict.get(w1, set()) | set([w])
+
+for k, v in dupe_dict.items():
+    if len(v) > 1:
+        print(k, v)
+
+
+#%% Turn this into vpuz files
+qxw_out = stdout
 
 reg_vpuz = mhv.make_vpuz(qxw_out, selected_paths, harder=False)
 harder_vpuz = mhv.make_vpuz(qxw_out, selected_paths, harder=True)
