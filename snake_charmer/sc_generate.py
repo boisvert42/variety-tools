@@ -9,11 +9,12 @@ Created on Fri Jan 14 14:21:10 2022
 """
 import itertools
 import json
+import wordninja
 
 # The smallest length for words in the puzzle
 MIN_WORD_LENGTH = 5
 # The minimum overlap of words
-MIN_OVERLAP = 2
+MIN_OVERLAP = 1
 # Minimum score of word list entries
 MIN_SCORE = 50
 # The word list to use
@@ -82,8 +83,13 @@ while new_word_count < prev_word_count:
     begin_dict = dict()
     end_dict = dict()
     for word in good_words:
+        # Find the individual components of the word for testing
+        word_split = set(wordninja.split(word))
         for n in range(MIN_OVERLAP, len(word) - MIN_OVERLAP + 1):
             w1, w2 = word[:n], word[n:]
+            # Make sure these aren't just the parts of the word
+            if w1 in word_split or w2 in word_split:
+                continue
             if w2 in beginnings and w1 in ends:
                 this_word = (word, None)
                 begin_dict[w1] = begin_dict.get(w1, set()).union([this_word])
@@ -104,9 +110,11 @@ print(len(good_words))
 # Now add any words that have a hidden word in them
 # but that still work with a beginning / end
 for word in all_words:
+    word_split = set(wordninja.split(word))
     for p in allPartitions(word, 3):
         w1, w_m, w2 = p
-        if w2 in beginnings and w1 in ends and w_m in all_words:
+        if w2 in beginnings and w1 in ends and w_m in all_words \
+            and w_m not in word_split and w1 not in word_split and w2 not in word_split:
             this_word = (word, w_m)
             begin_dict[w1] = begin_dict.get(w1, set()).union([this_word])
             end_dict[w2] = end_dict.get(w2, set()).union([this_word])
