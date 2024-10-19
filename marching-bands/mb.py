@@ -3,6 +3,7 @@ import wordninja
 from nltk.stem import PorterStemmer
 from collections import Counter
 import itertools
+import pandas as pd
 
 stemmer = PorterStemmer()
 
@@ -14,13 +15,15 @@ prefixTrie = trie.Trie()
 suffixTrie = trie.Trie()
 
 words = set()
-with open(r'/Users/aboisvert/Documents/Personal/spreadthewordlist.dict', 'r') as fid:
-    for line in fid:
-        word, score = line.strip().split(';')
-        if int(score) >= 50 and len(word) >= MIN_WORD_LENGTH and len(word) <= MAX_WORD_LENGTH:
-            words.add(word)
-            prefixTrie.insert(word)
-            suffixTrie.insert(word[::-1])
+df_words = pd.read_csv('spreadthewordlist.dict.zip', sep=';', compression='zip')
+for _, row in df_words.iterrows():
+    word, score = row
+    if pd.isna(word):
+        continue
+    if int(score) >= 50 and len(word) >= MIN_WORD_LENGTH and len(word) <= MAX_WORD_LENGTH:
+        words.add(word)
+        prefixTrie.insert(word)
+        suffixTrie.insert(word[::-1])
             
 #%%
 def are_there_dupes(arr):
@@ -132,6 +135,65 @@ def find_mb_backward_words(r1_start, r2_end, b1_start, b2_end, grid_size=GRID_SI
                 if b1_start + r2_middle_string in b1_words:
                     b1 = b1_start + r2_middle_string
                     arr = [r1, r2, b1, b2]
+                    if not are_there_dupes(arr):
+                        ret.append(arr)
+    return ret
+#END find_mb_backward_words()
+
+def find_mb_backward_words2(r1_start, r2_end, b1_start, b2_end, grid_size=GRID_SIZE):
+    """
+    Find words for a row where the band words go backward
+    This is a special version that looks for an extra backward word
+    """
+    r1_words = prefixTrie.search(r1_start)
+    r2_words = suffixTrie.search(r2_end[::-1])
+    b1_words = frozenset(prefixTrie.search(b1_start))
+    
+    ret = []
+
+    for r1 in r1_words:
+        if len(r1) > GRID_SIZE - MIN_WORD_LENGTH:
+            continue
+        # Get the end of r1
+        r1_end = r1[len(r1_start):]
+        # b2 is included in this
+        b2_start = r1_end[::-1]
+        b2 = ''
+        while len(b2_start) > 1:
+            b2_start = b2_start[1:]
+            b2 = b2_start + b2_end
+            if b2 in words:
+                break
+        #if len(b2_start) == 1:
+        #    continue
+        #END while
+        # Find the length of the end of b0
+        b0_end_length = len(r1) - len(b2_start) - len(r1_start)
+        b0_end = r1[::-1][:b0_end_length]
+        b0_words_b = suffixTrie.search(b0_end[::-1])
+        for b0_b in b0_words_b:
+            # b0 has to be a relatively short word
+            if len(b0_b) > GRID_SIZE/2:
+                continue
+            b0 = b0_b[::-1]
+            # The start of b0, reversed, will be the start of r2
+            b0_start = b0[:-len(b0_end)]
+            r2_start = b0_start[::-1]
+            # Find r2_words that start with r2_start and have length = grid_size - r1.length
+            # r2 words are backward because suffixTrie
+            for r2_b in r2_words:
+                if len(r2_b) != grid_size - len(r1):
+                    continue
+                r2 = r2_b[::-1]
+                if not r2.startswith(r2_start):
+                    continue
+                # Get the "middle string"
+                r2_middle_string = r2[len(r2_start):-len(r2_end)]
+                # b1_end is this, reversed
+                b1_end = r2_middle_string[::-1]
+                if b1_start + b1_end in b1_words:
+                    b1 = b1_start + b1_end
+                    arr = [r1, r2, b1, b0, b2]
                     if not are_there_dupes(arr):
                         ret.append(arr)
     return ret
