@@ -29,7 +29,8 @@ with open(wordlist_path, 'r') as fid:
 def are_there_dupes(arr):
     arr = set(arr)
     # Simple check first
-    suffixes = ['al', 'ing', 'ed', 'ly', 'd', 's', 'es', 'less']
+    suffixes = {'al', 'ing', 'ed', 'ly', 'd', 's', \
+                'es', 'less', 'ty', 'man', 'men'}
     for s, word in itertools.product(suffixes, arr):
         if word.endswith(s) and word[:-len(s)] in arr:
             return True
