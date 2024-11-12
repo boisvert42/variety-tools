@@ -1,0 +1,35 @@
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(12, 2em); /* 12 columns */
+    grid-template-rows: repeat(14, 2em);    /* 14 rows */
+    gap: 1px;
+    margin: 20px;
+    /* background-color: #f0f0f0; */
+}
+
+.cell {
+    width: 2em;
+    height: 2em;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 1.2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.cell.wall {
+    border: 2px solid black; /* Indicate labyrinth walls */
+}
+
+.cell.path-selected {
+    background-color: #d1c4e9;
+    border: 2px solid #673ab7;
+}
+
+.cell.filled {
+    font-weight: bold;
+    color: #000;
+    background-color: #b3e5fc;
+}
