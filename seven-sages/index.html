@@ -6,7 +6,13 @@
   <title>Seven Sages Construction</title>
   <!-- Skeleton CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" />
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css" />
   <style>
+    @font-face {
+      font-family: 'DejaVuSans';
+      src: url('DejaVuSans.ttf') format('truetype');
+    }
     #loading { font-style: italic; color: gray; }
     #spinner { display: inline-block; width: 1em; height: 1em; border: 2px solid #ccc; border-top: 2px solid #333; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5em; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -29,7 +35,7 @@
     <!-- modal box placeholder -->
     <div class="cw-modal" id="cw-modal"></div>
     <h2>Seven Sages Construction</h2>
-    <div id="loading"><span id="spinner"></span>Loading Pyodide and modules...</div>
+    <div id="loading"><span id="spinner"></span>Loading solver and dictionary...</div>
 
     <div id="mainUI">
       <div class="row">
@@ -45,10 +51,22 @@
             <textarea id="inputs" rows="34" placeholder="Enter each entry (7 letters) on its own line"></textarea>
             <br />
             <button id="generate" class="button-primary">Find next entry</button>
+            <button id="undo" class="button" type="button">Undo</button>
           </form>
 
           <div id="results-loading"></div>
-          <div id="results" class="prelike"></div>
+          <div id="results-table-div" style="margin-top: 20px;">
+            <table id="datatables-table" class="display u-full-width">
+              <thead>
+                <tr>
+                  <th>Word</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+            <p style="font-style: italic; color: gray; margin-top: 10px;">Click a row to insert it and find the next word.</p>
+          </div>
 
         </div>
         <div class="six columns">
@@ -62,102 +80,179 @@
 
   </div> <!-- container -->
 
-  <!-- Load Pyodide via classic script so loadPyodide() is global -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.27.6/full/pyodide.js"></script>
-  <!-- The main script -->
-  <script>
-  let pyodide = null;
-  async function initPyodide() {
-    pyodide = await loadPyodide();
-    // load PIL
-    await pyodide.loadPackage("pillow");
-    await pyodide.loadPackage("joblib");
+  <!-- Load jQuery and DataTables -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
-    // set up the files we want to load
-    const files = {
-      "seven_sages.py": await (await fetch("./seven_sages.py")).text(),
-      "spreadthewordlist.dict": await (await fetch("./spreadthewordlist.dict")).text(),
-      "seven_sages.jpg": new Uint8Array(
-        await fetch('seven_sages.jpg').then(res => res.arrayBuffer())
-      ),
-      "DejaVuSans.ttf": new Uint8Array(
-        await fetch('DejaVuSans.ttf').then(res => res.arrayBuffer())
-      )
-    };
+  <!-- Load JS Solver and Font/Image -->
+  <script type="module">
+  import { SevenSages, initWords } from './seven_sages.js';
 
-    // load the files
-    for (const [name, content] of Object.entries(files)) {
-      pyodide.FS.writeFile(name, content);
+  const gridImage = new Image();
+  let solverReady = false;
+  let table = null;
+
+  async function init() {
+    try {
+      // Initialize DataTable
+      table = $('#datatables-table').DataTable({
+        paging: true,
+        pageLength: 10,
+        searching: true,
+        ordering: false
+      });
+
+      // Start fetching the wordlist
+      const wordListPromise = fetch('./spreadthewordlist.dict').then(res => res.text());
+      
+      // Load the image
+      const imagePromise = new Promise((resolve, reject) => {
+        gridImage.onload = () => resolve();
+        gridImage.onerror = (e) => reject(e);
+        gridImage.src = 'seven_sages.jpg';
+      });
+
+      // Also ensure DejaVuSans is fully loaded before drawing on canvas
+      const fontPromise = document.fonts.ready;
+
+      const [wordListText] = await Promise.all([wordListPromise, imagePromise, fontPromise]);
+      
+      initWords(wordListText);
+      solverReady = true;
+
+      // hide loading and show main UI
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("mainUI").style.display = "block";
+    } catch (e) {
+      console.error(e);
+      document.getElementById("loading").textContent = "Failed to load assets: " + e.message;
     }
+  }
 
-    // Import the seven_sages module
-    await pyodide.runPythonAsync("import seven_sages, json");
-
-    // hide and show
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("mainUI").style.display = "block";
+  function drawGrid(ssInstance, filled = true) {
+    const canvas = document.createElement('canvas');
+    canvas.width = gridImage.width;
+    canvas.height = gridImage.height;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw background image
+    ctx.drawImage(gridImage, 0, 0);
+    
+    if (filled) {
+      ctx.font = '30px DejaVuSans, sans-serif';
+      ctx.fillStyle = 'black';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const baseRadius = Math.min(centerX, centerY);
+      
+      const rings = [
+        { letters: 48, radiusFactor: 0.94, startAngle: -Math.PI / 2 + Math.PI / 48, angleOffset: Math.PI / 24 },
+        { letters: 24, radiusFactor: 0.83, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
+        { letters: 24, radiusFactor: 0.72, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
+        { letters: 24, radiusFactor: 0.62, startAngle: -Math.PI / 2 + Math.PI / 24, angleOffset: Math.PI / 12 },
+        { letters: 12, radiusFactor: 0.52, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
+        { letters: 12, radiusFactor: 0.41, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
+        { letters: 12, radiusFactor: 0.31, startAngle: -Math.PI / 2, angleOffset: Math.PI / 6 }
+      ];
+      
+      for (let r = 0; r < rings.length; r++) {
+        const ringInfo = rings[r];
+        const row = ssInstance.rows[r].map(char => char.toUpperCase());
+        const radius = baseRadius * ringInfo.radiusFactor;
+        
+        for (let i = 0; i < ringInfo.letters; i++) {
+          const angle = ringInfo.startAngle + ringInfo.angleOffset * i;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          ctx.fillText(row[i], x, y);
+        }
+      }
+    }
+    
+    return canvas.toDataURL('image/png');
   }
 
   async function findNextEntry(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
-    // change "results" to "loading"
-    const loadText = 'Loading! This takes especially long for the 1st and 25th entries';
-    document.getElementById("results-loading").textContent = loadText;
-    document.getElementById("results").textContent = '';
-
-    // ensure that pyodide is loaded
-    if (!pyodide) {
-      document.getElementById("results").textContent = "Pyodide not yet loaded...";
+    if (!solverReady) {
+      alert("Solver not yet initialized...");
       return;
     }
 
-    // grab the quote and entries
-    const quote = document.getElementById("quote").value.trim();
-    const entries = document
-      .getElementById('inputs')
-      .value
-      .split('\n')
-      .filter(line => line.trim() !== '');
+    const loadText = 'Finding options...';
+    document.getElementById("results-loading").textContent = loadText;
+    table.clear().draw();
 
-    // set the constants in pyodide
-    pyodide.globals.set("_quote", quote);
-    pyodide.globals.set("_entries", entries);
+    // Let UI render the 'Finding options...' message
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    const result = await pyodide.runPythonAsync(`
-ss = seven_sages.SevenSages(_quote)
-for i in range(len(_entries)):
-    ss.set_word(_entries[i], i)
+    try {
+      const quote = document.getElementById("quote").value.trim();
+      const entries = document
+        .getElementById('inputs')
+        .value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line !== '');
 
-entries = ss.find_next_entry_options(n_jobs=1)
-b64 = ss.grid(filled=True)
-json.dumps([entries, b64])
-    `);
+      const ss = new SevenSages(quote);
+      for (let i = 0; i < entries.length; i++) {
+        ss.set_word(entries[i], i);
+      }
 
-    console.log(result);
-    const jsResult = JSON.parse(result);
-    let [entries1, b64] = jsResult;
-    let output = '';
-    entries1.forEach(x => {
-      output += x;
-      output += "\n";
-    });
-    if (!output) output = 'No entries found.';
-    document.getElementById("results").textContent = output;
+      const nextOptions = ss.find_next_entry_options();
+      const dataUri = drawGrid(ss, true);
 
-    document.getElementById("results-loading").textContent = '';
+      // Populate DataTable
+      const tableData = nextOptions.map(word => [word]);
+      table.clear().rows.add(tableData).draw();
+      table.search('').draw();
 
-    // Show the image
-    const dataUri = `data:image/png;base64,${b64}`;
-    document.getElementById("myImg").src = dataUri;
+      document.getElementById("myImg").src = dataUri;
+    } catch (e) {
+      console.error(e);
+      alert("Error: " + e.message);
+    } finally {
+      document.getElementById("results-loading").textContent = '';
+    }
   }
 
-  // initialize
-  initPyodide();
-  </script>
+  // Row selection handler
+  $(document).on('click', '#datatables-table tbody tr', function() {
+    const rowData = table.row(this).data();
+    if (!rowData || !rowData[0]) return;
+    const clickedWord = rowData[0];
 
-  <script type="text/javascript">
-    document.querySelector("form").addEventListener("submit", findNextEntry);
+    const textarea = document.getElementById('inputs');
+    let val = textarea.value.trim();
+    if (val) {
+      val += '\n' + clickedWord;
+    } else {
+      val = clickedWord;
+    }
+    textarea.value = val;
+
+    findNextEntry();
+  });
+
+  // Undo button handler
+  document.getElementById('undo').addEventListener('click', () => {
+    const textarea = document.getElementById('inputs');
+    const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l !== '');
+    if (lines.length > 0) {
+      lines.pop();
+      textarea.value = lines.join('\n');
+      findNextEntry();
+    }
+  });
+
+  document.querySelector("form").addEventListener("submit", findNextEntry);
+
+  init();
   </script>
 </body>
 </html>
