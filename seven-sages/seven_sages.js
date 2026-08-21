@@ -274,7 +274,7 @@ export class SevenSages {
                 }
             }
             results.sort((a, b) => b.score - a.score);
-            return results.map(r => r.word);
+            return results;
         } else {
             return options; // returns Set
         }
@@ -290,17 +290,19 @@ export class SevenSages {
             const lookahead = ix < 35;
             const arr = this.word_options(ix, lookahead);
             if (!lookahead) {
-                return Array.from(arr);
+                return Array.from(arr).map(w => ({ word: w, score: 0 }));
             } else {
                 const ret = [];
-                for (const w of arr) {
+                for (const item of arr) {
+                    const w = item.word;
                     this.set_word(w, ix);
                     const tmp = this.word_options(ix + 1, false);
                     if (tmp.size > 0) {
-                        ret.push(w);
+                        ret.push({ word: w, score: tmp.size });
                     }
                     this.remove_word_at(ix);
                 }
+                ret.sort((a, b) => b.score - a.score);
                 return ret;
             }
         }

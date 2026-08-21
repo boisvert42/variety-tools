@@ -38,44 +38,85 @@
     <div id="loading"><span id="spinner"></span>Loading solver and dictionary...</div>
 
     <div id="mainUI">
-      <div class="row">
-        <div class="six columns">
-          <h4>Inputs</h4>
-          <form>
-            <label class="label">
-              <span class="label-text">Quote (must be 48 characters exactly)</span>
+      <ul class="tab-nav" style="list-style: none; display: flex; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 20px;">
+        <li style="margin-right: 15px; margin-bottom: 0;">
+          <button class="button button-primary tab-btn" data-tab="tab-construct" type="button">Construct</button>
+        </li>
+        <li style="margin-bottom: 0;">
+          <button class="button tab-btn" data-tab="tab-vpuz" type="button">Make vPuz</button>
+        </li>
+      </ul>
+
+      <div id="tab-construct" class="tab-content">
+        <div class="row">
+          <div class="six columns">
+            <h4>Inputs</h4>
+            <form>
+              <label class="label">
+                <span class="label-text">Quote (must be 48 characters exactly)</span>
+                <br />
+                <input class="input" id="quote"></input>
+              </label>
+              <!-- One entry per line -->
+              <textarea id="inputs" rows="34" placeholder="Enter each entry (7 letters) on its own line"></textarea>
               <br />
-              <input class="input" id="quote"></input>
-            </label>
-            <!-- One entry per line -->
-            <textarea id="inputs" rows="34" placeholder="Enter each entry (7 letters) on its own line"></textarea>
-            <br />
-            <button id="generate" class="button-primary">Find next entry</button>
-            <button id="undo" class="button" type="button">Undo</button>
-          </form>
+              <button id="generate" class="button-primary">Find next entry</button>
+              <button id="undo" class="button" type="button">Undo</button>
+            </form>
 
-          <div id="results-loading"></div>
-          <div id="results-table-div" style="margin-top: 20px;">
-            <table id="datatables-table" class="display u-full-width">
-              <thead>
-                <tr>
-                  <th>Word</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
-            <p style="font-style: italic; color: gray; margin-top: 10px;">Click a row to insert it and find the next word.</p>
+            <div id="results-loading"></div>
+            <div id="results-table-div" style="margin-top: 20px;">
+              <table id="datatables-table" class="display u-full-width">
+                <thead>
+                  <tr>
+                    <th>Word</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
+              <p style="font-style: italic; color: gray; margin-top: 10px;">Click a row to insert it and find the next word.</p>
+            </div>
+
           </div>
-
-        </div>
-        <div class="six columns">
-          <h4>Grid</h4>
-          <div id="grid">
-            <img id="myImg" />
+          <div class="six columns">
+            <h4>Grid</h4>
+            <div id="grid">
+              <img id="myImg" />
+            </div>
           </div>
         </div>
+      </div>
+
+      <div id="tab-vpuz" class="tab-content" style="display: none;">
+        <div class="row">
+          <div class="six columns">
+            <label for="vpuz-title">Title</label>
+            <input type="text" id="vpuz-title" class="u-full-width" placeholder="e.g. Stained Glass" />
+          </div>
+          <div class="six columns">
+            <label for="vpuz-author">Author</label>
+            <input type="text" id="vpuz-author" class="u-full-width" placeholder="e.g. Alex Boisvert" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="six columns">
+            <label for="vpuz-copyright">Copyright</label>
+            <input type="text" id="vpuz-copyright" class="u-full-width" placeholder="e.g. &copy; 2026 Crossword Nexus" />
+          </div>
+          <div class="six columns">
+            <label for="vpuz-notes">Notes / Instructions</label>
+            <textarea id="vpuz-notes" class="u-full-width" rows="4"></textarea>
+          </div>
+        </div>
+
+        <hr />
+        <h4>Clues</h4>
+        <div id="vpuz-warning" style="display: none; color: red; font-weight: bold; margin-bottom: 15px;"></div>
+        <div id="vpuz-clues-container"></div>
+        <br />
+        <button id="vpuz-download" class="button-primary u-full-width" style="margin-top: 20px;">Download vPuz File</button>
       </div>
     </div>
 
@@ -137,6 +178,8 @@
       if (savedEntries !== null) {
         document.getElementById("inputs").value = savedEntries;
       }
+
+      loadVPuzMetadata();
 
       // hide loading and show main UI
       document.getElementById("loading").style.display = "none";
@@ -236,7 +279,7 @@
       const dataUri = drawGrid(ss, true);
 
       // Populate DataTable
-      const tableData = nextOptions.map(word => [word, getWordScore(word)]);
+      const tableData = nextOptions.map(item => [item.word, item.score]);
       table.clear().rows.add(tableData).draw();
       table.search('').draw();
 
@@ -279,6 +322,223 @@
   });
 
   document.querySelector("form").addEventListener("submit", findNextEntry);
+
+  // Tab switching logic
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('button-primary'));
+      btn.classList.add('button-primary');
+
+      const targetTab = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      document.getElementById(targetTab).style.display = 'block';
+
+      if (targetTab === 'tab-vpuz') {
+        updateVPuzTab();
+      }
+    });
+  });
+
+  function updateVPuzTab() {
+    const quote = document.getElementById("quote").value.trim();
+    const entriesVal = document.getElementById('inputs').value;
+    const entries = entriesVal
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line !== '');
+
+    const container = document.getElementById('vpuz-clues-container');
+    const warning = document.getElementById('vpuz-warning');
+    const downloadBtn = document.getElementById('vpuz-download');
+
+    if (entries.length !== 36) {
+      warning.style.display = 'block';
+      warning.textContent = `Warning: You currently have ${entries.length} entries. You need exactly 36 entries to generate the vPuz file.`;
+      container.style.display = 'none';
+      downloadBtn.disabled = true;
+      return;
+    }
+
+    warning.style.display = 'none';
+    container.style.display = 'block';
+    downloadBtn.disabled = false;
+
+    let ss;
+    try {
+      ss = new SevenSages(quote);
+      for (let i = 0; i < entries.length; i++) {
+        ss.set_word(entries[i], i);
+      }
+    } catch (e) {
+      warning.style.display = 'block';
+      warning.textContent = `Error in grid configuration: ${e.message}`;
+      container.style.display = 'none';
+      downloadBtn.disabled = true;
+      return;
+    }
+
+    let savedClues = [];
+    try {
+      const saved = localStorage.getItem('seven-sages-vpuz-clues');
+      if (saved) savedClues = JSON.parse(saved);
+    } catch (e) {
+      console.warn(e);
+    }
+
+    let html = '<div class="row">';
+    for (let i = 0; i < 36; i++) {
+      const num = i + 1;
+      const word = entries[i].toUpperCase();
+      const dirSymbol = ss.directions[i] === '+' ? '(+)' : '(-)';
+      const labelText = `${num} ${dirSymbol} (Word: ${word})`;
+      const savedVal = savedClues[i] || '';
+
+      if (i === 18) {
+        html += '</div><div class="row">';
+      }
+
+      html += `
+        <div class="six columns" style="margin-bottom: 10px;">
+          <label style="font-weight: normal; margin-bottom: 2px;">
+            <strong>${labelText}</strong>
+          </label>
+          <input type="text" class="u-full-width vpuz-clue-input" data-index="${i}" value="${savedVal.replace(/"/g, '&quot;')}" placeholder="Enter clue here..." />
+        </div>
+      `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+    const clueInputs = container.querySelectorAll('.vpuz-clue-input');
+    clueInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        const idx = parseInt(input.getAttribute('data-index'));
+        savedClues[idx] = input.value;
+        try {
+          localStorage.setItem('seven-sages-vpuz-clues', JSON.stringify(savedClues));
+        } catch (e) {
+          console.warn(e);
+        }
+      });
+    });
+  }
+
+  function loadVPuzMetadata() {
+    try {
+      const title = localStorage.getItem('seven-sages-vpuz-title');
+      if (title !== null) document.getElementById('vpuz-title').value = title;
+      
+      const author = localStorage.getItem('seven-sages-vpuz-author');
+      if (author !== null) document.getElementById('vpuz-author').value = author;
+      
+      const copyright = localStorage.getItem('seven-sages-vpuz-copyright');
+      if (copyright !== null) document.getElementById('vpuz-copyright').value = copyright;
+
+      const notes = localStorage.getItem('seven-sages-vpuz-notes');
+      if (notes !== null) {
+        document.getElementById('vpuz-notes').value = notes;
+      } else {
+        document.getElementById('vpuz-notes').value = "Each answer in this puzzle is seven letters long and encircles the correspondingly numbered space, reading either clockwise (+) or counterclockwise (-) as indicated. The starting point of each answer is for you to determine. When the grid is correctly filled in, the letters in the outermost ring (reading clockwise from answer 1) will spell out a quote.";
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  ['vpuz-title', 'vpuz-author', 'vpuz-copyright', 'vpuz-notes'].forEach(id => {
+    document.getElementById(id).addEventListener('input', (e) => {
+      try {
+        localStorage.setItem(`seven-sages-${id}`, e.target.value);
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+  });
+
+  function downloadVPuzFile() {
+    const quote = document.getElementById("quote").value.trim();
+    const entries = document
+      .getElementById('inputs')
+      .value
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line !== '');
+
+    if (entries.length !== 36) {
+      alert("Error: Must have exactly 36 entries.");
+      return;
+    }
+
+    let ss;
+    try {
+      ss = new SevenSages(quote);
+      for (let i = 0; i < entries.length; i++) {
+        ss.set_word(entries[i], i);
+      }
+    } catch (e) {
+      alert(`Error in grid configuration: ${e.message}`);
+      return;
+    }
+
+    let chars = [];
+    for (let r = 0; r < ss.rows.length; r++) {
+      for (let c = 0; c < ss.rows[r].length; c++) {
+        const char = ss.rows[r][c].toUpperCase();
+        if (char && char !== '.') {
+          chars.push(char);
+        }
+      }
+    }
+    chars.sort();
+    const solutionString = chars.join('');
+
+    const title = document.getElementById('vpuz-title').value.trim() || 'Stained Glass';
+    const author = document.getElementById('vpuz-author').value.trim() || 'Alex Boisvert';
+    const copyright = document.getElementById('vpuz-copyright').value.trim() || '© 2026 Crossword Nexus';
+    const notes = document.getElementById('vpuz-notes').value.trim();
+
+    const clueInputs = document.querySelectorAll('.vpuz-clue-input');
+    const cluesArr = [];
+    for (let i = 0; i < 36; i++) {
+      const num = i + 1;
+      const dirSymbol = ss.directions[i] === '+' ? '(+)' : '(-)';
+      let clueText = '';
+      const matchingInput = Array.from(clueInputs).find(input => parseInt(input.getAttribute('data-index')) === i);
+      if (matchingInput) {
+        clueText = matchingInput.value.trim();
+      }
+      cluesArr.push([`${num} ${dirSymbol}`, clueText]);
+    }
+
+    const base64Image = drawGrid(ss, false);
+
+    const vpuzObj = {
+      author: author,
+      title: title,
+      copyright: copyright,
+      "solution-string": solutionString,
+      notes: notes,
+      clues: {
+        "Clues": cluesArr
+      },
+      "puzzle-image": base64Image
+    };
+
+    const jsonString = JSON.stringify(vpuzObj, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.vpuz`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('vpuz-download').addEventListener('click', downloadVPuzFile);
 
   init();
   </script>
