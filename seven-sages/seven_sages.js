@@ -5,10 +5,12 @@
  */
 
 let WORDS = [];
+const WORD_SCORES = new Map();
 
 export function initWords(wordListText) {
     const lines = wordListText.split('\n');
     const wordsSet = new Set();
+    WORD_SCORES.clear();
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
@@ -18,10 +20,15 @@ export function initWords(wordListText) {
             const score = parseInt(parts[1], 10);
             if (word.length === 7 && score >= 50) {
                 wordsSet.add(word);
+                WORD_SCORES.set(word, score);
             }
         }
     }
     WORDS = Array.from(wordsSet);
+}
+
+export function getWordScore(word) {
+    return WORD_SCORES.get(word.toLowerCase()) || 0;
 }
 
 function alphaOnly(s) {

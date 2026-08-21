@@ -60,6 +60,7 @@
               <thead>
                 <tr>
                   <th>Word</th>
+                  <th>Score</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +87,7 @@
 
   <!-- Load JS Solver and Font/Image -->
   <script type="module">
-  import { SevenSages, initWords } from './seven_sages.js';
+  import { SevenSages, initWords, getWordScore } from './seven_sages.js';
 
   const gridImage = new Image();
   let solverReady = false;
@@ -99,7 +100,8 @@
         paging: true,
         pageLength: 10,
         searching: true,
-        ordering: false
+        ordering: true,
+        order: []
       });
 
       // Start fetching the wordlist
@@ -120,9 +122,29 @@
       initWords(wordListText);
       solverReady = true;
 
+      // Load from localStorage
+      let savedQuote = null;
+      let savedEntries = null;
+      try {
+        savedQuote = localStorage.getItem('seven-sages-quote');
+        savedEntries = localStorage.getItem('seven-sages-entries');
+      } catch (e) {
+        console.warn("localStorage not available:", e);
+      }
+      if (savedQuote !== null) {
+        document.getElementById("quote").value = savedQuote;
+      }
+      if (savedEntries !== null) {
+        document.getElementById("inputs").value = savedEntries;
+      }
+
       // hide loading and show main UI
       document.getElementById("loading").style.display = "none";
       document.getElementById("mainUI").style.display = "block";
+
+      if (savedQuote || savedEntries) {
+        findNextEntry();
+      }
     } catch (e) {
       console.error(e);
       document.getElementById("loading").textContent = "Failed to load assets: " + e.message;
@@ -192,12 +214,18 @@
 
     try {
       const quote = document.getElementById("quote").value.trim();
-      const entries = document
-        .getElementById('inputs')
-        .value
+      const entriesVal = document.getElementById('inputs').value;
+      const entries = entriesVal
         .split('\n')
         .map(line => line.trim())
         .filter(line => line !== '');
+
+      try {
+        localStorage.setItem('seven-sages-quote', quote);
+        localStorage.setItem('seven-sages-entries', entriesVal);
+      } catch (e) {
+        console.warn("localStorage not available:", e);
+      }
 
       const ss = new SevenSages(quote);
       for (let i = 0; i < entries.length; i++) {
@@ -208,7 +236,7 @@
       const dataUri = drawGrid(ss, true);
 
       // Populate DataTable
-      const tableData = nextOptions.map(word => [word]);
+      const tableData = nextOptions.map(word => [word, getWordScore(word)]);
       table.clear().rows.add(tableData).draw();
       table.search('').draw();
 
