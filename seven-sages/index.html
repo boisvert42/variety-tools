@@ -93,17 +93,17 @@
         <div class="row">
           <div class="six columns">
             <label for="vpuz-title">Title</label>
-            <input type="text" id="vpuz-title" class="u-full-width" placeholder="e.g. Stained Glass" />
+            <input type="text" id="vpuz-title" class="u-full-width" />
           </div>
           <div class="six columns">
             <label for="vpuz-author">Author</label>
-            <input type="text" id="vpuz-author" class="u-full-width" placeholder="e.g. Alex Boisvert" />
+            <input type="text" id="vpuz-author" class="u-full-width" />
           </div>
         </div>
         <div class="row">
           <div class="six columns">
             <label for="vpuz-copyright">Copyright</label>
-            <input type="text" id="vpuz-copyright" class="u-full-width" placeholder="e.g. &copy; 2026 Crossword Nexus" />
+            <input type="text" id="vpuz-copyright" class="u-full-width" value="© " placeholder="e.g. &copy; 2026 Crossword Nexus" />
           </div>
           <div class="six columns">
             <label for="vpuz-notes">Notes / Instructions</label>
@@ -248,9 +248,8 @@
       return;
     }
 
-    const loadText = 'Finding options...';
-    document.getElementById("results-loading").textContent = loadText;
-    table.clear().draw();
+    document.getElementById("results-loading").innerHTML = '<span id="spinner"></span>Finding options...';
+    document.getElementById("results-table-div").style.display = "none";
 
     // Let UI render the 'Finding options...' message
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -289,6 +288,7 @@
       alert("Error: " + e.message);
     } finally {
       document.getElementById("results-loading").textContent = '';
+      document.getElementById("results-table-div").style.display = "block";
     }
   }
 
@@ -388,19 +388,17 @@
     }
 
     let html = '<div class="row">';
-    for (let i = 0; i < 36; i++) {
+    
+    // Left column: Clues 1-18
+    html += '<div class="six columns">';
+    for (let i = 0; i < 18; i++) {
       const num = i + 1;
       const word = entries[i].toUpperCase();
       const dirSymbol = ss.directions[i] === '+' ? '(+)' : '(-)';
       const labelText = `${num} ${dirSymbol} (Word: ${word})`;
       const savedVal = savedClues[i] || '';
-
-      if (i === 18) {
-        html += '</div><div class="row">';
-      }
-
       html += `
-        <div class="six columns" style="margin-bottom: 10px;">
+        <div style="margin-bottom: 10px;">
           <label style="font-weight: normal; margin-bottom: 2px;">
             <strong>${labelText}</strong>
           </label>
@@ -408,6 +406,26 @@
         </div>
       `;
     }
+    html += '</div>';
+
+    // Right column: Clues 19-36
+    html += '<div class="six columns">';
+    for (let i = 18; i < 36; i++) {
+      const num = i + 1;
+      const word = entries[i].toUpperCase();
+      const dirSymbol = ss.directions[i] === '+' ? '(+)' : '(-)';
+      const labelText = `${num} ${dirSymbol} (Word: ${word})`;
+      const savedVal = savedClues[i] || '';
+      html += `
+        <div style="margin-bottom: 10px;">
+          <label style="font-weight: normal; margin-bottom: 2px;">
+            <strong>${labelText}</strong>
+          </label>
+          <input type="text" class="u-full-width vpuz-clue-input" data-index="${i}" value="${savedVal.replace(/"/g, '&quot;')}" placeholder="Enter clue here..." />
+        </div>
+      `;
+    }
+    html += '</div>';
     html += '</div>';
     container.innerHTML = html;
 
