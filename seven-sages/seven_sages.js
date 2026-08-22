@@ -91,6 +91,10 @@ function wordToBloom(word, pattern) {
     return [null, ''];
 }
 
+function mod(n, m) {
+    return ((n % m) + m) % m;
+}
+
 export class SevenSages {
     constructor(quote) {
         this.quote = quote;
@@ -172,18 +176,18 @@ export class SevenSages {
                 [1, ix - 1],
                 [2, ix - 1],
                 [3, ix - 1],
-                [2, (ix - 2 + 24) % 24],
-                [1, (ix - 2 + 24) % 24]
+                [2, mod(ix - 2, 24)],
+                [1, mod(ix - 2, 24)]
             ];
         } else {
             return [
-                [3, ((ix - 25) * 2) % 24],
+                [3, mod((ix - 25) * 2, 24)],
                 [4, ix - 25],
                 [5, ix - 25],
                 [6, ix - 25],
-                [5, (ix - 26 + 12) % 12],
-                [4, (ix - 26 + 12) % 12],
-                [3, (((ix - 26) * 2) % 24) + 1]
+                [5, mod(ix - 26, 12)],
+                [4, mod(ix - 26, 12)],
+                [3, mod((ix - 26) * 2, 24) + 1]
             ];
         }
     }
