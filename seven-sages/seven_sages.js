@@ -7,6 +7,11 @@
 let WORDS = [];
 const WORD_SCORES = new Map();
 
+/**
+ * Initializes the wordlist dictionary and parses words with their associated scores.
+ * Filters out words that are not exactly 7 letters or are scored under 50.
+ * @param {string} wordListText - Raw dictionary content with format "word;score" separated by newlines.
+ */
 export function initWords(wordListText) {
     const lines = wordListText.split('\n');
     const wordsSet = new Set();
@@ -27,14 +32,30 @@ export function initWords(wordListText) {
     WORDS = Array.from(wordsSet);
 }
 
+/**
+ * Returns the dictionary score of a given word, or 0 if it is not found.
+ * @param {string} word - The word to look up.
+ * @returns {number} Score of the word.
+ */
 export function getWordScore(word) {
     return WORD_SCORES.get(word.toLowerCase()) || 0;
 }
 
+/**
+ * Filters a string to only include lowercase alphabetic characters.
+ * @param {string} s - Input string.
+ * @returns {string} Lowercase alphabetic-only string.
+ */
 function alphaOnly(s) {
     return s.toLowerCase().replace(/[^a-z]+/g, '');
 }
 
+/**
+ * Returns the 7 rotations of a word.
+ * @param {string} input - The 7-letter word/pattern.
+ * @param {boolean} [backward=false] - Whether to reverse the string before rotating.
+ * @returns {Set<string>} A Set of the 7 rotated patterns.
+ */
 function bloomPatterns1(input, backward = false) {
     let str = backward ? input.split('').reverse().join('') : input;
     const patterns = new Set();
@@ -45,12 +66,24 @@ function bloomPatterns1(input, backward = false) {
     return patterns;
 }
 
+/**
+ * Returns all 14 rotations (both clockwise and counter-clockwise) of a pattern.
+ * @param {string} input - The pattern/word.
+ * @returns {Set<string>} A Set of all 14 rotated patterns.
+ */
 function bloomPatterns(input) {
     const p1 = bloomPatterns1(input, false);
     const p2 = bloomPatterns1(input, true);
     return new Set([...p1, ...p2]);
 }
 
+/**
+ * Checks if a 7-letter word matches a 7-letter pattern (where '.' matches any character).
+ * Both parameters must be pre-lowercased.
+ * @param {string} word - The 7-letter lowercase word.
+ * @param {string} pattern - The 7-letter lowercase pattern.
+ * @returns {boolean} True if the word fits the pattern.
+ */
 function matchesPattern(word, pattern) {
     for (let i = 0; i < 7; i++) {
         const pChar = pattern[i];
@@ -61,6 +94,11 @@ function matchesPattern(word, pattern) {
     return true;
 }
 
+/**
+ * Finds all dictionary words matching any rotation of the given pattern.
+ * @param {string} input - The pattern/word to match against.
+ * @returns {Set<string>} Set of matching lowercase words.
+ */
 function bloomMatches(input) {
     const output = new Set();
     const patterns = Array.from(bloomPatterns(input.toLowerCase()));
@@ -75,6 +113,12 @@ function bloomMatches(input) {
     return output;
 }
 
+/**
+ * Determines which rotation of a word fits the pattern, and in what direction.
+ * @param {string} word - The word to fit.
+ * @param {string} pattern - The target pattern.
+ * @returns {[string|null, string]} An array containing the matching rotation (or null) and direction ('+' for clockwise, '-' for counter-clockwise, or '').
+ */
 function wordToBloom(word, pattern) {
     const lowerWord = word.toLowerCase();
     const lowerPattern = pattern.toLowerCase();
@@ -91,11 +135,25 @@ function wordToBloom(word, pattern) {
     return [null, ''];
 }
 
+/**
+ * Python-style modulo function that handles negative numbers correctly.
+ * @param {number} n - Dividend.
+ * @param {number} m - Divisor.
+ * @returns {number} The modulo result.
+ */
 function mod(n, m) {
     return ((n % m) + m) % m;
 }
 
+/**
+ * Solver class representing the Seven Sages circular grid puzzle.
+ * Manages the rows of characters, tracks entries, and searches for valid fits.
+ */
 export class SevenSages {
+    /**
+     * Creates a new Seven Sages puzzle session with a given quote.
+     * @param {string} quote - The 48-character quote that fills the outermost ring.
+     */
     constructor(quote) {
         this.quote = quote;
         this.rows = [
@@ -119,6 +177,10 @@ export class SevenSages {
         this.readable_words = [...this.words];
     }
 
+    /**
+     * Resets the board and state back to the beginning, or optionally up to a specific word index.
+     * @param {number|null} [index=null] - Index to restore state up to.
+     */
     reset(index = null) {
         const words = [...this.readable_words];
         const quote = this.quote;
@@ -148,6 +210,10 @@ export class SevenSages {
         }
     }
 
+    /**
+     * Removes the word at a given index, reconstructing the grid state with the remaining words.
+     * @param {number} index - Index of the word to remove.
+     */
     remove_word_at(index) {
         const words = [...this.readable_words];
         this.reset(null);
@@ -158,6 +224,10 @@ export class SevenSages {
         }
     }
 
+    /**
+     * Finds the index of the first word slot that has not yet been filled.
+     * @returns {number|null} Index of the unfilled word slot, or null if complete.
+     */
     next_unfilled_word_index() {
         for (let i = 0; i < this.words.length; i++) {
             if (!/^[a-z]+$/i.test(this.words[i])) {
@@ -167,6 +237,12 @@ export class SevenSages {
         return null;
     }
 
+    /**
+     * Computes the row and column coordinates in the grid mapping to the 7 letters of the word at index jx.
+     * @private
+     * @param {number} jx - Word index.
+     * @returns {Array<[number, number]>} Array of coordinate pairs [rowIndex, columnIndex].
+     */
     _word_indices(jx) {
         const ix = jx + 1;
         if (ix <= 24) {
@@ -192,6 +268,12 @@ export class SevenSages {
         }
     }
 
+    /**
+     * Reconstructs the letters of a word at index jx from the current grid characters.
+     * @private
+     * @param {number} jx - Word index.
+     * @returns {string} The 7-letter word pattern formed by the grid cells.
+     */
     _word_at(jx) {
         let ret = '';
         const indices = this._word_indices(jx);
@@ -201,6 +283,10 @@ export class SevenSages {
         return ret;
     }
 
+    /**
+     * Re-reads all 36 word slots from the grid characters and updates `this.words`.
+     * @private
+     */
     _update_words() {
         this.words = [];
         for (let i = 0; i < 36; i++) {
@@ -208,6 +294,11 @@ export class SevenSages {
         }
     }
 
+    /**
+     * Places a word into the grid at the specified index, mutating cells and updating surrounding patterns.
+     * @param {string} word - The 7-letter word to insert.
+     * @param {number|null} [index=null] - Index to place it. If null, uses the next unfilled slot.
+     */
     set_word(word, index = null) {
         if (index === null) {
             index = this.next_unfilled_word_index();
@@ -226,6 +317,11 @@ export class SevenSages {
         this.directions[index] = direction;
     }
 
+    /**
+     * Helper to clone the current grid and array states to allow non-destructive searches.
+     * @private
+     * @returns {Object} Saved state snapshot.
+     */
     _save_state() {
         return {
             rows: this.rows.map(row => [...row]),
@@ -235,6 +331,11 @@ export class SevenSages {
         };
     }
 
+    /**
+     * Restores the grid and array states from a saved snapshot.
+     * @private
+     * @param {Object} state - The state snapshot to restore.
+     */
     _restore_state(state) {
         this.rows = state.rows.map(row => [...row]);
         this.words = [...state.words];
@@ -242,6 +343,15 @@ export class SevenSages {
         this.directions = [...state.directions];
     }
 
+    /**
+     * Test-fits a single word candidate in a slot and returns the score (number of valid next-word options).
+     * @private
+     * @param {string} word - Candidate word to test.
+     * @param {number} ix - Slot index.
+     * @param {boolean} [lookback=false] - Whether to perform a wrap-around circular lookback check.
+     * @param {number} [lookback_words=5] - Required minimum candidate options to pass.
+     * @returns {Object|null} An object with {word, score} if valid, or null.
+     */
     _test_word(word, ix, lookback = false, lookback_words = 5) {
         const state = this._save_state();
         this.set_word(word, ix);
@@ -274,6 +384,13 @@ export class SevenSages {
         return null;
     }
 
+    /**
+     * Searches for dictionary words that fit the pattern at index, optionally scoring them via lookahead.
+     * @param {number|null} [index=null] - Index to query.
+     * @param {boolean} [lookahead=true] - Whether to look ahead and score candidate fits.
+     * @param {boolean} [lookback=false] - Whether to apply lookback validation.
+     * @returns {Array<Object>|Set<string>} A sorted array of {word, score} if lookahead is true, or a Set of strings if false.
+     */
     word_options(index = null, lookahead = true, lookback = false) {
         const ix = index === null ? this.next_unfilled_word_index() : index;
         const patt = this.words[ix];
@@ -294,6 +411,11 @@ export class SevenSages {
         }
     }
 
+    /**
+     * Main entry point to fetch and score candidate words for the next unfilled slot.
+     * Special-cases starting slots (0 and 24) to execute lookback checks.
+     * @returns {Array<Object>} List of scored candidate word options.
+     */
     find_next_entry_options() {
         const ix = this.next_unfilled_word_index();
         if (ix === null) return [];
