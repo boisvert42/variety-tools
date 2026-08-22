@@ -51,27 +51,22 @@ function bloomPatterns(input) {
     return new Set([...p1, ...p2]);
 }
 
-function simpleRegex(pattern) {
-    pattern = pattern.toLowerCase();
-    return function(word) {
-        if (word.length !== pattern.length) return false;
-        word = word.toLowerCase();
-        for (let i = 0; i < pattern.length; i++) {
-            if (pattern[i] !== '.' && pattern[i] !== word[i]) {
-                return false;
-            }
+function matchesPattern(word, pattern) {
+    for (let i = 0; i < 7; i++) {
+        const pChar = pattern[i];
+        if (pChar !== '.' && pChar !== word[i]) {
+            return false;
         }
-        return true;
-    };
+    }
+    return true;
 }
 
 function bloomMatches(input) {
     const output = new Set();
-    const patterns = bloomPatterns(input.toLowerCase());
-    const matchers = Array.from(patterns).map(pat => simpleRegex(pat));
+    const patterns = Array.from(bloomPatterns(input.toLowerCase()));
     for (const w of WORDS) {
-        for (const matcher of matchers) {
-            if (matcher(w)) {
+        for (let i = 0; i < patterns.length; i++) {
+            if (matchesPattern(w, patterns[i])) {
                 output.add(w);
                 break;
             }
@@ -81,14 +76,15 @@ function bloomMatches(input) {
 }
 
 function wordToBloom(word, pattern) {
-    const matcher = simpleRegex(pattern);
-    for (const b of bloomPatterns1(word, false)) {
-        if (matcher(b)) {
+    const lowerWord = word.toLowerCase();
+    const lowerPattern = pattern.toLowerCase();
+    for (const b of bloomPatterns1(lowerWord, false)) {
+        if (matchesPattern(b, lowerPattern)) {
             return [b, '+'];
         }
     }
-    for (const b of bloomPatterns1(word, true)) {
-        if (matcher(b)) {
+    for (const b of bloomPatterns1(lowerWord, true)) {
+        if (matchesPattern(b, lowerPattern)) {
             return [b, '-'];
         }
     }
@@ -226,20 +222,31 @@ export class SevenSages {
         this.directions[index] = direction;
     }
 
+    _save_state() {
+        return {
+            rows: this.rows.map(row => [...row]),
+            words: [...this.words],
+            readable_words: [...this.readable_words],
+            directions: [...this.directions]
+        };
+    }
+
+    _restore_state(state) {
+        this.rows = state.rows.map(row => [...row]);
+        this.words = [...state.words];
+        this.readable_words = [...state.readable_words];
+        this.directions = [...state.directions];
+    }
+
     _test_word(word, ix, lookback = false, lookback_words = 5) {
-        const ss = new SevenSages(this.quote);
-        for (let i = 0; i < this.readable_words.length; i++) {
-            if (/^[a-z]+$/i.test(this.readable_words[i])) {
-                ss.set_word(this.readable_words[i], i);
-            }
-        }
-        ss.set_word(word, ix);
+        const state = this._save_state();
+        this.set_word(word, ix);
 
         let ix2 = ix + 1;
         if (ix === 35) {
             ix2 = 24;
         }
-        let words2 = ss.word_options(ix2, false);
+        let words2 = this.word_options(ix2, false);
         if (lookback && words2.size >= lookback_words) {
             let ix0 = ix - 1;
             if (ix === 0) {
@@ -247,15 +254,18 @@ export class SevenSages {
             } else if (ix === 24) {
                 ix0 = 35;
             }
-            let words3 = ss.word_options(ix0, false);
+            let words3 = this.word_options(ix0, false);
             if (words3.size < 5) {
                 words2 = new Set();
             } else {
                 words2 = words2.size < words3.size ? words2 : words3;
             }
         }
-        if ((words2.size > 0 && !lookback) || (lookback && words2.size >= lookback_words)) {
-            return { word, score: words2.size };
+        const score = words2.size;
+        this._restore_state(state);
+
+        if ((score > 0 && !lookback) || (lookback && score >= lookback_words)) {
+            return { word, score };
         }
         return null;
     }
@@ -294,13 +304,14 @@ export class SevenSages {
             } else {
                 const ret = [];
                 for (const item of arr) {
+                    const state = this._save_state();
                     const w = item.word;
                     this.set_word(w, ix);
                     const tmp = this.word_options(ix + 1, false);
                     if (tmp.size > 0) {
                         ret.push({ word: w, score: tmp.size });
                     }
-                    this.remove_word_at(ix);
+                    this._restore_state(state);
                 }
                 ret.sort((a, b) => b.score - a.score);
                 return ret;
