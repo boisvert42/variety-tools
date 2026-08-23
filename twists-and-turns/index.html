@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twists & Turns Constructor</title>
+
+  <!-- Skeleton CSS for layout -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+  
+  <!-- Custom CSS styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <h2>Twists & Turns Constructor</h2>
+    <p>Interactively find candidate Twist words that satisfy Turn constraints along the snake path.</p>
+
+    <!-- Wordlist loader -->
+    <div class="card">
+      <h5>1. Load Dictionary</h5>
+      <div class="row">
+        <div class="six columns">
+          <label for="wordlist-file">Select Word List (.dict or .txt)</label>
+          <input type="file" id="wordlist-file" accept=".dict,.txt" onchange="loadUserWordlist()">
+          <span id="loading-spinner" style="display:none;" class="spinner"></span>
+          <span id="loading-status">No dictionary loaded.</span>
+        </div>
+        <div class="six columns">
+          <label for="min-score">Min Word Score (for .dict files)</label>
+          <input class="u-full-width" type="number" id="min-score" value="50" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Query Config -->
+    <div class="card">
+      <h5>2. Define Twist Pattern & Turn Constraints</h5>
+      <div class="row">
+        <div class="six columns">
+          <label for="twist-pattern">Twist Layout (9 chars, grid cell order)</label>
+          <input class="u-full-width" type="text" id="twist-pattern" value="aAABBBCCC" placeholder="e.g. aAABBBCCC" oninput="updateGridPreview()">
+          <p class="help-block" style="font-size: 12px; color: #666; margin-top: -10px;">
+            Define the layout row-by-row (left-to-right, top-to-bottom). Lowercase for constants, uppercase for variables.
+          </p>
+
+          <label>Grid Cell Layout Preview (3x3 grid)</label>
+          <div class="grid-preview" id="grid-preview">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+
+        <div class="six columns">
+          <label for="turn-constraints">Turn Constraints (one per line)</label>
+          <textarea class="u-full-width constraints-area" id="turn-constraints" placeholder="e.g.&#10;aA*&#10;*~Bge&#10;itC*">aA*
+*~Bge
+itC*</textarea>
+          <p class="help-block" style="font-size: 12px; color: #666; margin-top: -10px;">
+            Use <code>*</code> for wildcard start/end. Use <code>~V</code> to represent the reversed value of variable V.
+          </p>
+
+          <button class="button-primary u-full-width" id="search-btn" onclick="performSearch()">Search Candidates</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <h5>3. Candidate Twist Words</h5>
+      <div id="results-container">
+        <p>Load a dictionary and click Search to find matches.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Constructor JS Logic -->
+  <script src="twists.js"></script>
+</body>
+</html>
