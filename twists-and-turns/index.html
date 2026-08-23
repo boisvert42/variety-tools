@@ -7,7 +7,10 @@
 
   <!-- Skeleton CSS for layout -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
-  
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+
   <!-- Custom CSS styles -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -53,7 +56,7 @@
 
         <div class="six columns">
           <label for="turn-constraints">Turn Constraints (one per line)</label>
-          <textarea class="u-full-width constraints-area" id="turn-constraints" placeholder="e.g.&#10;aA*&#10;*~Bge&#10;itC*">aA*
+          <textarea class="u-full-width constraints-area" id="turn-constraints" placeholder="e.g.&#10;A*&#10;*~Bge&#10;itC*">A*
 *~Bge
 itC*</textarea>
           <p class="help-block" style="font-size: 12px; color: #666; margin-top: -10px;">
@@ -69,12 +72,40 @@ itC*</textarea>
     <div class="card">
       <h5>3. Candidate Twist Words</h5>
       <div id="results-container">
-        <p>Load a dictionary and click Search to find matches.</p>
+        <table id="results-table" class="display" style="width:100%">
+          <thead>
+            <tr>
+              <th>Twist Word</th>
+              <th>Spiral Path</th>
+              <th>Seq</th>
+              <th>Variable Bindings</th>
+              <th>Resolved Constraints (Possibilities)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated dynamically by twists.js -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
+  <!-- Load jQuery and DataTables -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
   <!-- Constructor JS Logic -->
   <script src="twists.js"></script>
+
+  <!-- Initialize DataTable -->
+  <script>
+    $(document).ready(function() {
+      $('#results-table').DataTable({
+        order: [], // keep our bottleneck-sorted candidate order
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+      });
+    });
+  </script>
 </body>
 </html>

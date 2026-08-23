@@ -260,10 +260,10 @@ function evaluateConstraints(bindings, constraints) {
 }
 
 function performSearch() {
-  const resultsContainer = document.getElementById("results-container");
+  const searchBtn = document.getElementById("search-btn");
 
   if (wordsSet.size === 0) {
-    resultsContainer.innerHTML = "<p style='color:red; font-weight:bold;'>Please load a dictionary first.</p>";
+    alert("Please load a dictionary first.");
     return;
   }
 
@@ -274,7 +274,9 @@ function performSearch() {
   const rawConstraints = document.getElementById("turn-constraints").value.split("\n");
   const activeConstraints = rawConstraints.filter(c => c.trim().length > 0);
 
-  resultsContainer.innerHTML = "<p>Searching...</p>";
+  // Disable button and show searching state
+  searchBtn.disabled = true;
+  searchBtn.innerText = "Searching...";
 
   const matches = [];
 
@@ -340,27 +342,19 @@ function performSearch() {
 }
 
 function renderResults(matches) {
-  const container = document.getElementById("results-container");
-  if (matches.length === 0) {
-    container.innerHTML = "<p>No matching candidate Twist words found.</p>";
-    return;
-  }
+  const searchBtn = document.getElementById("search-btn");
+  
+  // Re-enable search button
+  searchBtn.disabled = false;
+  searchBtn.innerText = "Search Candidates";
 
-  let html = `<p>Found <strong>${matches.length}</strong> matching candidate(s) (ordered by most possibilities first):</p>`;
-  html += `<table class="results-table">
-    <thead>
-      <tr>
-        <th>Twist Word</th>
-        <th>Spiral Path</th>
-        <th>Seq</th>
-        <th>Variable Bindings</th>
-        <th>Resolved Constraints (Possibilities)</th>
-      </tr>
-    </thead>
-    <tbody>`;
+  const table = $('#results-table').DataTable();
+  table.clear();
 
+  const rowsData = [];
   for (const m of matches) {
     const badgeClass = m.pathType === "inward" ? "badge-inward" : "badge-outward";
+    const pathCell = `<span class="badge ${badgeClass}">${m.pathType.toUpperCase()}</span> <span class="path-direction">${m.pathName}</span>`;
 
     let bindingsStr = "";
     for (const [k, v] of Object.entries(m.bindings)) {
@@ -374,18 +368,14 @@ function renderResults(matches) {
       </span> `;
     }
 
-    html += `<tr>
-      <td><strong>${m.word}</strong></td>
-      <td>
-        <span class="badge ${badgeClass}">${m.pathType.toUpperCase()}</span>
-        <span class="path-direction">${m.pathName}</span>
-      </td>
-      <td><code>${m.gridSeq}</code></td>
-      <td>${bindingsStr}</td>
-      <td>${constraintsHtml}</td>
-    </tr>`;
+    rowsData.push([
+      `<strong>${m.word}</strong>`,
+      pathCell,
+      `<code>${m.gridSeq}</code>`,
+      bindingsStr,
+      constraintsHtml
+    ]);
   }
 
-  html += `</tbody></table>`;
-  container.innerHTML = html;
+  table.rows.add(rowsData).draw();
 }
