@@ -324,3 +324,13 @@ div.has-advanced-upload {
   width: 100px; /* Adjust as needed */
   margin-top: 10px;
 }
+
+/** Font size slider helpers **/
+
+.font-indicator.small-a {
+  font-size: 1rem;
+}
+
+.font-indicator.large-a {
+  font-size: 1.5rem;
+}

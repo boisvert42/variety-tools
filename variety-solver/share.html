@@ -73,6 +73,13 @@
 
   <main>
     <form id="vpuzForm">
+      <div style="margin-bottom: 2rem; padding: 1rem; border: 2px dashed var(--accent); border-radius: 0.5rem; text-align: center;">
+        <label style="margin: 0; cursor: pointer;">
+          <strong>Optional: Populate fields from an existing .vpuz file</strong>
+          <input type="file" id="importVpuz" accept=".vpuz" style="display: block; margin: 0.5rem auto 0 auto;" />
+        </label>
+      </div>
+
       <h2>Metadata</h2>
 
       <label>Title <input type="text" id="title" /></label>
@@ -90,6 +97,10 @@
 
       <h2>Puzzle Image</h2>
       <label><input type="file" id="puzzleImage" accept="image/*" /></label>
+      <div id="imagePreviewContainer" class="hidden" style="margin-top: 0.5rem;">
+        <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;">Current Image Preview:</p>
+        <img id="puzzleImagePreview" style="max-width: 200px; max-height: 200px; display: block; border: 1px solid var(--accent); border-radius: 0.25rem;" />
+      </div>
 
       <label>
         <input type="checkbox" id="uploadToImgBB" />
@@ -126,7 +137,28 @@
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 
   <script>
-    // ----- Helpers -----
+    // ----- Helpers & State -----
+    let loadedImage = null;
+
+    function showPreview(src) {
+      const container = document.getElementById("imagePreviewContainer");
+      const previewImg = document.getElementById("puzzleImagePreview");
+      previewImg.src = src;
+      container.classList.remove("hidden");
+    }
+
+    function dataURLtoFile(dataurl, filename) {
+      const arr = dataurl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, { type: mime });
+    }
+
     function readImageAsDataURL(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -180,6 +212,94 @@
       if (!json.success) throw new Error("imgbb upload failed");
       return json.data.url; // e.g. https://i.ibb.co/abc123.png
     }
+
+    // --- Event Listeners for Images & Import ---
+    document.getElementById("puzzleImage").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        try {
+          const dataUrl = await readImageAsDataURL(file);
+          showPreview(dataUrl);
+          loadedImage = null; // Clear imported image when manual file is chosen
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
+
+    document.getElementById("importVpuz").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+
+          // Populate metadata
+          if (data.title !== undefined) document.getElementById("title").value = data.title;
+          if (data.author !== undefined) document.getElementById("author").value = data.author;
+          if (data.copyright !== undefined) document.getElementById("copyright").value = data.copyright;
+          if (data.notes !== undefined) document.getElementById("notes").value = data.notes;
+          if (data["solution-string"] !== undefined) document.getElementById("solution").value = data["solution-string"];
+
+          // Handle image preview
+          if (data["puzzle-image"]) {
+            loadedImage = data["puzzle-image"];
+            showPreview(loadedImage);
+            document.getElementById("puzzleImage").value = ""; // Clear file input
+          }
+
+          // Handle clues
+          if (data.clues) {
+            clueGroupsDiv.innerHTML = "";
+            Object.entries(data.clues).forEach(([groupName, cluesList]) => {
+              const wrapper = document.createElement("div");
+              wrapper.className = "clue-group";
+
+              const groupLabel = document.createElement("input");
+              groupLabel.placeholder = "Clue group name (e.g., Clockwise)";
+              groupLabel.className = "group-name";
+              groupLabel.value = groupName;
+              wrapper.appendChild(groupLabel);
+
+              const clueList = document.createElement("div");
+              clueList.className = "clue-list";
+              wrapper.appendChild(clueList);
+
+              const addClueBtn = document.createElement("button");
+              addClueBtn.type = "button";
+              addClueBtn.textContent = "+ Add Clue";
+              addClueBtn.addEventListener("click", () => {
+                const numInput = document.createElement("input");
+                numInput.placeholder = "Number";
+                const textInput = document.createElement("input");
+                textInput.placeholder = "Clue text";
+                clueList.appendChild(numInput);
+                clueList.appendChild(textInput);
+              });
+              wrapper.appendChild(addClueBtn);
+
+              cluesList.forEach(([num, clueText]) => {
+                const numInput = document.createElement("input");
+                numInput.placeholder = "Number";
+                numInput.value = num;
+                const textInput = document.createElement("input");
+                textInput.placeholder = "Clue text";
+                textInput.value = clueText;
+                clueList.appendChild(numInput);
+                clueList.appendChild(textInput);
+              });
+
+              clueGroupsDiv.appendChild(wrapper);
+            });
+          }
+        } catch (err) {
+          alert("Error parsing .vpuz file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
 
 
     // ----- Clue group UI -----
@@ -261,7 +381,7 @@
         .replace(/[^A-Z]/g, "");
       const imageFile = document.getElementById("puzzleImage").files[0];
 
-      if (!imageFile) {
+      if (!imageFile && !loadedImage) {
         alert("Please select a puzzle image.");
         return;
       }
@@ -287,11 +407,21 @@
 
       try {
         let imageField;
-        if (document.getElementById("uploadToImgBB").checked) {
-          status.textContent = "Uploading image to imgbb...";
-          imageField = await uploadToImgbb(imageFile);
+        if (imageFile) {
+          if (document.getElementById("uploadToImgBB").checked) {
+            status.textContent = "Uploading image to imgbb...";
+            imageField = await uploadToImgbb(imageFile);
+          } else {
+            imageField = await readImageAsDataURL(imageFile);
+          }
         } else {
-          imageField = await readImageAsDataURL(imageFile);
+          if (document.getElementById("uploadToImgBB").checked && loadedImage.startsWith("data:")) {
+            status.textContent = "Uploading image to imgbb...";
+            const fileObj = dataURLtoFile(loadedImage, "puzzle.png");
+            imageField = await uploadToImgbb(fileObj);
+          } else {
+            imageField = loadedImage;
+          }
         }
 
         const vpuz = {
