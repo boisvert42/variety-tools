@@ -90,6 +90,7 @@
       </div>
 
       <div id="tab-vpuz" class="tab-content" style="display: none;">
+        <p>Note: after creating your vpuz you can share your puzzle using <a href="https://crosswordnexus.github.io/variety-tools/variety-solver/share.html">The Variety Puzzle Sharer</a>.
         <div class="row">
           <div class="six columns">
             <label for="vpuz-title">Title</label>
@@ -147,7 +148,7 @@
 
       // Start fetching the wordlist
       const wordListPromise = fetch('./spreadthewordlist.dict').then(res => res.text());
-      
+
       // Load the image
       const imagePromise = new Promise((resolve, reject) => {
         gridImage.onload = () => resolve();
@@ -159,7 +160,7 @@
       const fontPromise = document.fonts.ready;
 
       const [wordListText] = await Promise.all([wordListPromise, imagePromise, fontPromise]);
-      
+
       initWords(wordListText);
       solverReady = true;
 
@@ -199,20 +200,20 @@
     canvas.width = gridImage.width;
     canvas.height = gridImage.height;
     const ctx = canvas.getContext('2d');
-    
+
     // Draw background image
     ctx.drawImage(gridImage, 0, 0);
-    
+
     if (filled) {
       ctx.font = '30px DejaVuSans, sans-serif';
       ctx.fillStyle = 'black';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      
+
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const baseRadius = Math.min(centerX, centerY);
-      
+
       const rings = [
         { letters: 48, radiusFactor: 0.94, startAngle: -Math.PI / 2 + Math.PI / 48, angleOffset: Math.PI / 24 },
         { letters: 24, radiusFactor: 0.83, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
@@ -222,12 +223,12 @@
         { letters: 12, radiusFactor: 0.41, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
         { letters: 12, radiusFactor: 0.31, startAngle: -Math.PI / 2, angleOffset: Math.PI / 6 }
       ];
-      
+
       for (let r = 0; r < rings.length; r++) {
         const ringInfo = rings[r];
         const row = ssInstance.rows[r].map(char => char.toUpperCase());
         const radius = baseRadius * ringInfo.radiusFactor;
-        
+
         for (let i = 0; i < ringInfo.letters; i++) {
           const angle = ringInfo.startAngle + ringInfo.angleOffset * i;
           const x = centerX + radius * Math.cos(angle);
@@ -236,7 +237,7 @@
         }
       }
     }
-    
+
     return canvas.toDataURL('image/png');
   }
 
@@ -388,7 +389,7 @@
     }
 
     let html = '<div class="row">';
-    
+
     // Left column: Clues 1-18
     html += '<div class="six columns">';
     for (let i = 0; i < 18; i++) {
@@ -447,10 +448,10 @@
     try {
       const title = localStorage.getItem('seven-sages-vpuz-title');
       if (title !== null) document.getElementById('vpuz-title').value = title;
-      
+
       const author = localStorage.getItem('seven-sages-vpuz-author');
       if (author !== null) document.getElementById('vpuz-author').value = author;
-      
+
       const copyright = localStorage.getItem('seven-sages-vpuz-copyright');
       if (copyright !== null) document.getElementById('vpuz-copyright').value = copyright;
 
