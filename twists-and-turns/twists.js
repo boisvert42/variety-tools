@@ -26,6 +26,8 @@ let wordsSet = new Set();
 let prefixMap = new Map();
 let suffixMap = new Map();
 let words9 = [];
+let lastLoadedText = "";
+let loadedFilename = "default";
 
 // Initialize UI
 updateGridPreview();
@@ -47,7 +49,7 @@ window.addEventListener("DOMContentLoaded", () => {
       return response.text();
     })
     .then(text => {
-      parseAndIndexWordlist(text, minScore);
+      parseAndIndexWordlist(text, minScore, "default");
     })
     .catch(err => {
       console.warn("Default wordlist auto-load failed:", err);
@@ -80,7 +82,11 @@ function updateGridPreview() {
   }
 }
 
-function parseAndIndexWordlist(text, minScore) {
+function parseAndIndexWordlist(text, minScore, filename) {
+  lastLoadedText = text;
+  if (filename) {
+    loadedFilename = filename;
+  }
   const spinner = document.getElementById("loading-spinner");
   const status = document.getElementById("loading-status");
 
@@ -89,7 +95,7 @@ function parseAndIndexWordlist(text, minScore) {
 
   setTimeout(() => {
     const lines = text.split(/\r?\n/);
-    
+
     wordsSet.clear();
     prefixMap.clear();
     suffixMap.clear();
@@ -110,6 +116,11 @@ function parseAndIndexWordlist(text, minScore) {
         word = line.toUpperCase();
       }
 
+      if (/[\d&]/.test(word)) {
+        continue;
+      }
+      word = word.replace(/[^A-Z]/g, "");
+
       if (score >= minScore && /^[A-Z]+$/.test(word)) {
         wordsSet.add(word);
         if (word.length === 9) {
@@ -119,7 +130,7 @@ function parseAndIndexWordlist(text, minScore) {
         for (let len = 1; len <= word.length; len++) {
           const pref = word.substring(0, len);
           const suff = word.substring(word.length - len);
-          
+
           prefixMap.set(pref, (prefixMap.get(pref) || 0) + 1);
           suffixMap.set(suff, (suffixMap.get(suff) || 0) + 1);
         }
@@ -127,24 +138,28 @@ function parseAndIndexWordlist(text, minScore) {
     }
 
     spinner.style.display = "none";
-    status.innerText = `Loaded ${wordsSet.size.toLocaleString()} words (${words9.length.toLocaleString()} of length 9).`;
+    status.innerText = `Loaded [${loadedFilename}]. ${wordsSet.size.toLocaleString()} words (${words9.length.toLocaleString()} of length 9)`;
   }, 50);
 }
 
-function loadUserWordlist() {
+function loadOrReloadWordlist() {
   const fileInput = document.getElementById("wordlist-file");
   const minScore = parseInt(document.getElementById("min-score").value) || 0;
 
-  if (fileInput.files.length === 0) return;
-
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    parseAndIndexWordlist(e.target.result, minScore);
-  };
-
-  reader.readAsText(file);
+  if (fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      parseAndIndexWordlist(e.target.result, minScore, file.name);
+    };
+    reader.readAsText(file);
+  } else {
+    if (!lastLoadedText) {
+      alert("No word list loaded yet!");
+      return;
+    }
+    parseAndIndexWordlist(lastLoadedText, minScore, loadedFilename);
+  }
 }
 
 // Parse the 9-char template in grid cell order (left-to-right, top-to-bottom)
@@ -183,7 +198,7 @@ function evaluateConstraints(bindings, constraints) {
 
     let isPrefix = false;
     let isSuffix = false;
-    
+
     if (constraint.startsWith("*")) {
       isSuffix = true;
       constraint = constraint.substring(1);
@@ -193,7 +208,7 @@ function evaluateConstraints(bindings, constraints) {
       isPrefix = !isSuffix; // if only ends with *, it's prefix
       constraint = constraint.slice(0, -1);
     }
-    
+
     // Check again for contains
     const isContains = rawConstraint.trim().startsWith("*") && rawConstraint.trim().endsWith("*");
 
@@ -343,7 +358,7 @@ function performSearch() {
 
 function renderResults(matches) {
   const searchBtn = document.getElementById("search-btn");
-  
+
   // Re-enable search button
   searchBtn.disabled = false;
   searchBtn.innerText = "Search Candidates";
