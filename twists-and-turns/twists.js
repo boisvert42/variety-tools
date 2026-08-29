@@ -27,6 +27,7 @@ let prefixMap = new Map();
 let suffixMap = new Map();
 let words9 = [];
 let lastLoadedText = "";
+let loadedFilename = "default";
 
 // Initialize UI
 updateGridPreview();
@@ -48,7 +49,7 @@ window.addEventListener("DOMContentLoaded", () => {
       return response.text();
     })
     .then(text => {
-      parseAndIndexWordlist(text, minScore);
+      parseAndIndexWordlist(text, minScore, "default");
     })
     .catch(err => {
       console.warn("Default wordlist auto-load failed:", err);
@@ -81,8 +82,11 @@ function updateGridPreview() {
   }
 }
 
-function parseAndIndexWordlist(text, minScore) {
+function parseAndIndexWordlist(text, minScore, filename) {
   lastLoadedText = text;
+  if (filename) {
+    loadedFilename = filename;
+  }
   const spinner = document.getElementById("loading-spinner");
   const status = document.getElementById("loading-status");
 
@@ -134,7 +138,7 @@ function parseAndIndexWordlist(text, minScore) {
     }
 
     spinner.style.display = "none";
-    status.innerText = `Loaded ${wordsSet.size.toLocaleString()} words (${words9.length.toLocaleString()} of length 9).`;
+    status.innerText = `Loaded [${loadedFilename}]. ${wordsSet.size.toLocaleString()} words (${words9.length.toLocaleString()} of length 9)`;
   }, 50);
 }
 
@@ -146,7 +150,7 @@ function loadOrReloadWordlist() {
     const file = fileInput.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
-      parseAndIndexWordlist(e.target.result, minScore);
+      parseAndIndexWordlist(e.target.result, minScore, file.name);
     };
     reader.readAsText(file);
   } else {
@@ -154,7 +158,7 @@ function loadOrReloadWordlist() {
       alert("No word list loaded yet!");
       return;
     }
-    parseAndIndexWordlist(lastLoadedText, minScore);
+    parseAndIndexWordlist(lastLoadedText, minScore, loadedFilename);
   }
 }
 
