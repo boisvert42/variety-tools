@@ -91,7 +91,6 @@ textarea.constraints-area {
 }
 #loading-status {
   font-weight: bold;
-  margin-left: 10px;
 }
 .constraint-pill {
   display: inline-block;

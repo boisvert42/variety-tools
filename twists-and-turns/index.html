@@ -27,8 +27,10 @@
         <div class="six columns">
           <label for="wordlist-file">Select Word List (.dict or .txt)</label>
           <input type="file" id="wordlist-file" accept=".dict,.txt">
-          <span id="loading-spinner" style="display:none;" class="spinner"></span>
-          <span id="loading-status">No dictionary loaded.</span>
+          <div style="margin-top: 8px;">
+            <span id="loading-spinner" style="display:none;" class="spinner"></span>
+            <span id="loading-status">No dictionary loaded.</span>
+          </div>
         </div>
         <div class="six columns">
           <label for="min-score">Min Word Score (for .dict files)</label>
