@@ -26,6 +26,7 @@ let wordsSet = new Set();
 let prefixMap = new Map();
 let suffixMap = new Map();
 let words9 = [];
+let lastLoadedText = "";
 
 // Initialize UI
 updateGridPreview();
@@ -81,6 +82,7 @@ function updateGridPreview() {
 }
 
 function parseAndIndexWordlist(text, minScore) {
+  lastLoadedText = text;
   const spinner = document.getElementById("loading-spinner");
   const status = document.getElementById("loading-status");
 
@@ -136,20 +138,24 @@ function parseAndIndexWordlist(text, minScore) {
   }, 50);
 }
 
-function loadUserWordlist() {
+function loadOrReloadWordlist() {
   const fileInput = document.getElementById("wordlist-file");
   const minScore = parseInt(document.getElementById("min-score").value) || 0;
 
-  if (fileInput.files.length === 0) return;
-
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    parseAndIndexWordlist(e.target.result, minScore);
-  };
-
-  reader.readAsText(file);
+  if (fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      parseAndIndexWordlist(e.target.result, minScore);
+    };
+    reader.readAsText(file);
+  } else {
+    if (!lastLoadedText) {
+      alert("No word list loaded yet!");
+      return;
+    }
+    parseAndIndexWordlist(lastLoadedText, minScore);
+  }
 }
 
 // Parse the 9-char template in grid cell order (left-to-right, top-to-bottom)

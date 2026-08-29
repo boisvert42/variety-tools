@@ -26,13 +26,14 @@
       <div class="row">
         <div class="six columns">
           <label for="wordlist-file">Select Word List (.dict or .txt)</label>
-          <input type="file" id="wordlist-file" accept=".dict,.txt" onchange="loadUserWordlist()">
+          <input type="file" id="wordlist-file" accept=".dict,.txt">
           <span id="loading-spinner" style="display:none;" class="spinner"></span>
           <span id="loading-status">No dictionary loaded.</span>
         </div>
         <div class="six columns">
           <label for="min-score">Min Word Score (for .dict files)</label>
           <input class="u-full-width" type="number" id="min-score" value="50" min="0">
+          <button class="button-primary u-full-width" onclick="loadOrReloadWordlist()">Apply / Load Word List</button>
         </div>
       </div>
     </div>
