@@ -89,7 +89,7 @@ function parseAndIndexWordlist(text, minScore) {
 
   setTimeout(() => {
     const lines = text.split(/\r?\n/);
-    
+
     wordsSet.clear();
     prefixMap.clear();
     suffixMap.clear();
@@ -110,6 +110,11 @@ function parseAndIndexWordlist(text, minScore) {
         word = line.toUpperCase();
       }
 
+      if (/[\d&]/.test(word)) {
+        continue;
+      }
+      word = word.replace(/[^A-Z]/g, "");
+
       if (score >= minScore && /^[A-Z]+$/.test(word)) {
         wordsSet.add(word);
         if (word.length === 9) {
@@ -119,7 +124,7 @@ function parseAndIndexWordlist(text, minScore) {
         for (let len = 1; len <= word.length; len++) {
           const pref = word.substring(0, len);
           const suff = word.substring(word.length - len);
-          
+
           prefixMap.set(pref, (prefixMap.get(pref) || 0) + 1);
           suffixMap.set(suff, (suffixMap.get(suff) || 0) + 1);
         }
@@ -183,7 +188,7 @@ function evaluateConstraints(bindings, constraints) {
 
     let isPrefix = false;
     let isSuffix = false;
-    
+
     if (constraint.startsWith("*")) {
       isSuffix = true;
       constraint = constraint.substring(1);
@@ -193,7 +198,7 @@ function evaluateConstraints(bindings, constraints) {
       isPrefix = !isSuffix; // if only ends with *, it's prefix
       constraint = constraint.slice(0, -1);
     }
-    
+
     // Check again for contains
     const isContains = rawConstraint.trim().startsWith("*") && rawConstraint.trim().endsWith("*");
 
@@ -343,7 +348,7 @@ function performSearch() {
 
 function renderResults(matches) {
   const searchBtn = document.getElementById("search-btn");
-  
+
   // Re-enable search button
   searchBtn.disabled = false;
   searchBtn.innerText = "Search Candidates";
