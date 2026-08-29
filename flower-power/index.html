@@ -311,14 +311,14 @@ function generateVpuz() {
     const cwClue = (cwCluesLines[i - 1] || '').trim();
     const cwAns = (cwAnswersLines[i - 1] || '').trim().toUpperCase();
     const ccwClue = (ccwCluesLines[i - 1] || '').trim();
-    const ccwAns = (ccwAnswersLines[i - 1] || '').trim().toUpperCase();
 
     cwClues.push([i, cwClue]);
     ccwClues.push([i, ccwClue]);
 
     // Construct the solution string from all non-empty answers
+    // but only from one list
     solutionString += cwAns;
-    solutionString += ccwAns;
+
   }
 
   // Sort solution string (sorted letters)
