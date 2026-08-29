@@ -330,6 +330,10 @@ function loadPuzzle(data) {
     if (data.author) bodyHTML += `<p id="modal-author">${data.author}</p>`;
     if (data.copyright) bodyHTML += `<p id="modal-copyright">${data.copyright}</p>`;
     if (data.notes) bodyHTML += `<p id="modal-notes">${data.notes}</p>`;
+    bodyHTML += '<hr />';
+    bodyHTML += `<p><strong>How to solve:</strong>
+    Click on any blank space or cell in the grid to highlight it, then type a letter.
+    Highlight and press <strong>Backspace</strong> or <strong>Delete</strong> to remove a letter.</p>`;
     // Show the modal
     showModal(title, bodyHTML);
   }); // end info
