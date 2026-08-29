@@ -129,7 +129,7 @@
 
   <!-- Load JS Solver and Font/Image -->
   <script type="module">
-  import { SevenSages, initWords, getWordScore } from './seven_sages.js';
+  import { SevenSages, initWords, getWordScore, drawGrid } from './seven_sages.js';
 
   const gridImage = new Image();
   let solverReady = false;
@@ -195,52 +195,6 @@
     }
   }
 
-  function drawGrid(ssInstance, filled = true) {
-    const canvas = document.createElement('canvas');
-    canvas.width = gridImage.width;
-    canvas.height = gridImage.height;
-    const ctx = canvas.getContext('2d');
-
-    // Draw background image
-    ctx.drawImage(gridImage, 0, 0);
-
-    if (filled) {
-      ctx.font = '30px DejaVuSans, sans-serif';
-      ctx.fillStyle = 'black';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const baseRadius = Math.min(centerX, centerY);
-
-      const rings = [
-        { letters: 48, radiusFactor: 0.94, startAngle: -Math.PI / 2 + Math.PI / 48, angleOffset: Math.PI / 24 },
-        { letters: 24, radiusFactor: 0.83, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
-        { letters: 24, radiusFactor: 0.72, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
-        { letters: 24, radiusFactor: 0.62, startAngle: -Math.PI / 2 + Math.PI / 24, angleOffset: Math.PI / 12 },
-        { letters: 12, radiusFactor: 0.52, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
-        { letters: 12, radiusFactor: 0.41, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
-        { letters: 12, radiusFactor: 0.31, startAngle: -Math.PI / 2, angleOffset: Math.PI / 6 }
-      ];
-
-      for (let r = 0; r < rings.length; r++) {
-        const ringInfo = rings[r];
-        const row = ssInstance.rows[r].map(char => char.toUpperCase());
-        const radius = baseRadius * ringInfo.radiusFactor;
-
-        for (let i = 0; i < ringInfo.letters; i++) {
-          const angle = ringInfo.startAngle + ringInfo.angleOffset * i;
-          const x = centerX + radius * Math.cos(angle);
-          const y = centerY + radius * Math.sin(angle);
-          ctx.fillText(row[i], x, y);
-        }
-      }
-    }
-
-    return canvas.toDataURL('image/png');
-  }
-
   async function findNextEntry(event) {
     if (event) event.preventDefault();
 
@@ -276,7 +230,7 @@
       }
 
       const nextOptions = ss.find_next_entry_options();
-      const dataUri = drawGrid(ss, true);
+      const dataUri = drawGrid(ss, gridImage, true);
 
       // Populate DataTable
       const tableData = nextOptions.map(item => [item.word, item.score]);
@@ -531,7 +485,7 @@
       cluesArr.push([`${num} ${dirSymbol}`, clueText]);
     }
 
-    const base64Image = drawGrid(ss, false);
+    const base64Image = drawGrid(ss, gridImage, false);
 
     const vpuzObj = {
       author: author,

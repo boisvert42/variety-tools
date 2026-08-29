@@ -445,3 +445,57 @@ export class SevenSages {
         }
     }
 }
+
+/**
+ * Draws the Seven Sages grid on a canvas using the background image and returns a PNG data URL.
+ * @param {SevenSages} ssInstance - The SevenSages solver instance.
+ * @param {HTMLImageElement} gridImage - The loaded background image element.
+ * @param {boolean} [filled=true] - Whether to draw letters on the grid.
+ * @returns {string} Base64 PNG data URL of the rendered grid.
+ */
+export function drawGrid(ssInstance, gridImage, filled = true) {
+    const canvas = document.createElement('canvas');
+    canvas.width = gridImage.width;
+    canvas.height = gridImage.height;
+    const ctx = canvas.getContext('2d');
+
+    // Draw background image
+    ctx.drawImage(gridImage, 0, 0);
+
+    if (filled) {
+        ctx.font = '30px DejaVuSans, sans-serif';
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const baseRadius = Math.min(centerX, centerY);
+
+        const rings = [
+            { letters: 48, radiusFactor: 0.94, startAngle: -Math.PI / 2 + Math.PI / 48, angleOffset: Math.PI / 24 },
+            { letters: 24, radiusFactor: 0.83, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
+            { letters: 24, radiusFactor: 0.72, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 12 },
+            { letters: 24, radiusFactor: 0.62, startAngle: -Math.PI / 2 + Math.PI / 24, angleOffset: Math.PI / 12 },
+            { letters: 12, radiusFactor: 0.52, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
+            { letters: 12, radiusFactor: 0.41, startAngle: -Math.PI / 2 + Math.PI / 12, angleOffset: Math.PI / 6 },
+            { letters: 12, radiusFactor: 0.31, startAngle: -Math.PI / 2, angleOffset: Math.PI / 6 }
+        ];
+
+        for (let r = 0; r < rings.length; r++) {
+            const ringInfo = rings[r];
+            const row = ssInstance.rows[r].map(char => char.toUpperCase());
+            const radius = baseRadius * ringInfo.radiusFactor;
+
+            for (let i = 0; i < ringInfo.letters; i++) {
+                const angle = ringInfo.startAngle + ringInfo.angleOffset * i;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                ctx.fillText(row[i], x, y);
+            }
+        }
+    }
+
+    return canvas.toDataURL('image/png');
+}
+
