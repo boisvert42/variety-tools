@@ -103,6 +103,7 @@ h2.clues-title {
 
 /* Space between clues */
 .clue-item {
+  position: relative;
   margin-bottom: 5px;
   cursor: pointer;
   display: flex;
@@ -114,11 +115,38 @@ h2.clues-title {
   /* Change background on hover */
 }
 
+.clue-item.completed {
+  color: #aaa;
+}
+
+.clue-item.completed .input-box {
+  color: initial;
+}
+
 /* Clue note text box */
 .input-box {
   display: none;
   margin-top: 5px;
   font-weight: bold;
+}
+
+.cluenote-button {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  padding: 4px 4px;
+  border-radius: 4px;
+  background-color: transparent;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAXAAAAFwBhyfMcAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAACXSURBVDiNzdI9CsJQEEXhzyI7CP5sxYXYuA4t3JO9XbS21ARBXILgAoRYJA9CiOElNh6YZuDcO8UwjBkyPLEZ6EpwQdmYbayc1gFrvBsBrxh5iiv2HSFZrBwaQ8iq3i+GyO2QpE+eo+iQy3qfjmkucRt79p/LCfIvcqF6316WY5sDu19kOLTkPObswAQP3HHCEffVr0fxAbSiWClHz+v4AAAAAElFTkSuQmCC');
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.cluenote-button:hover {
+  background-color: lightgray;
 }
 
 /* Bold the clue numbers */
