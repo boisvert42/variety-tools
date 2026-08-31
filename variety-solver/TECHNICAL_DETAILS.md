@@ -22,11 +22,15 @@ This document provides a technical overview of the Crossword Nexus Variety Puzzl
   - The cache key is generated dynamically from a hash of the `.vpuz` content (using `hashCode`).
   - Letters are stored under key: `cnvs_letters_<hash>` as an array of objects: `{ x, y, letter, width, height }`.
   - Clue notes are stored under key: `cnvs_notes_<hash>` as an array of text strings.
+  - Completed clues are stored under key: `cnvs_completed_<hash>` as an array of booleans.
 
-## Clue Note Inputs (`input-box` / `clue-item`)
+## Clue Note Inputs & Completed States (`input-box` / `clue-item`)
 
 - The `.clue-item` list elements contain:
   - `.clue-number` span
   - `.clue-text` span
   - `.input-box` text input (hidden by default)
-- Current click behavior shows the input box and focuses it, saving its state on input or blur, and hiding it if empty.
+  - `.cluenote-button` pencil icon button (hidden by default)
+- Hovering over a `.clue-item` reveals the `.cluenote-button` (pencil icon) if the clue's input-box note is empty.
+- Clicking the `.cluenote-button` opens the `.input-box` for editing.
+- Clicking the clue itself toggles the `.completed` class, which grays out the clue text and saves the state to localStorage.
