@@ -52,6 +52,7 @@ function loadPuzzle(data) {
   // Read clue notes and letters
   var letters = lscache.get(data.letters_save) || [];
   var clue_notes = lscache.get(data.clue_notes_save) || [];
+  var clue_completed = lscache.get(data.clue_completed_save) || [];
 
   // Load the image
   img.src = data['puzzle-image'];
@@ -88,12 +89,14 @@ function loadPuzzle(data) {
     // Add the list elements
     var thisHTML = '';
     data['improved-clues'][i].clues.forEach(obj => {
+      const isCompleted = clue_completed[clueBoxId];
       thisHTML += `
-          <li class="clue-item">
+          <li class="clue-item${isCompleted ? ' completed' : ''}" data-clue-id="${clueBoxId}">
             <span class="clue-number">${obj.number}</span>
             <span class="clue-text">${obj.text}
             <input class="input-box note-style" id="clue-box-${clueBoxId}" type="text">
-            </span>`
+            </span>
+            <span class="cluenote-button" style="display: none;"></span>`
       if (obj.explanation) thisHTML += `<span class="clue-explanation">${obj.explanation}</span>\n`;
       thisHTML += "</li>\n";
       clueBoxId += 1;
@@ -254,7 +257,7 @@ function loadPuzzle(data) {
     }
   } // end removeLetter
 
-  /** Dealing with clue note boxes **/
+  /** Dealing with clue note boxes and completed states **/
   // Select all .clue-item elements
   const items = document.querySelectorAll('.clue-item');
 
@@ -276,29 +279,51 @@ function loadPuzzle(data) {
 
   // Loop through each item and add event listeners
   items.forEach(item => {
-    // Find the input box within the clicked item
     let inputBox = item.querySelector('.input-box');
+    let cluenoteButton = item.querySelector('.cluenote-button');
+    let clueId = parseInt(item.getAttribute('data-clue-id'));
+
+    // Hover state for showing the pencil icon
+    item.addEventListener('mouseenter', function() {
+      if (inputBox.value.trim().length === 0) {
+        cluenoteButton.style.display = 'block';
+      }
+    });
+
+    item.addEventListener('mouseleave', function() {
+      cluenoteButton.style.display = 'none';
+    });
+
+    // Pencil button click to focus note input
+    cluenoteButton.addEventListener('click', function(event) {
+      event.stopPropagation();
+      inputBox.style.display = 'block';
+      inputBox.focus();
+      cluenoteButton.style.display = 'none';
+    });
+
+    // Clicking the input box itself shouldn't toggle the clue completion
+    inputBox.addEventListener('click', function(event) {
+      event.stopPropagation();
+    });
 
     // Add input event listener to check visibility
-    item.addEventListener('input', function(event) {
-      if (event.target.classList.contains('input-box')) {
-        checkInputBox(event.target);
-        saveInputBoxText(event.target);
-      }
+    inputBox.addEventListener('input', function(event) {
+      checkInputBox(event.target);
+      saveInputBoxText(event.target);
     });
 
     // Add blur event listener to hide the input box if it's empty
-    item.addEventListener('focusout', function(event) {
-      if (event.target.classList.contains('input-box')) {
-        checkInputBox(event.target);
-        saveInputBoxText(event.target);
-      }
+    inputBox.addEventListener('blur', function(event) {
+      checkInputBox(event.target);
+      saveInputBoxText(event.target);
     });
 
+    // Clicking on the clue item grays it out (like fakeclues mode)
     item.addEventListener('click', function() {
-      // Show and focus the input box when the item is clicked
-      inputBox.style.display = 'block';
-      inputBox.focus();
+      item.classList.toggle('completed');
+      clue_completed[clueId] = item.classList.contains('completed');
+      lscache.set(data.clue_completed_save, clue_completed, saveTime);
     });
 
     // Add keydown event listener to the input box
@@ -399,6 +424,7 @@ function readVpuz(data) {
   // Get the hash of the data
   data['letters_save'] = `cnvs_letters_${dataHash}`;
   data['clue_notes_save'] = `cnvs_notes_${dataHash}`;
+  data['clue_completed_save'] = `cnvs_completed_${dataHash}`;
 
   // If there's a "solution-string", add a sorted version
   if (data['solution-string']) {

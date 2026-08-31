@@ -14,7 +14,10 @@ You'll need to create a `vPuz` file to render your puzzle. You can look at the e
 To allow users to solve your puzzle, create a URL like https://your.site/variety-solver?file=/link/to/your/file.vpuz
 
 ## Solving
-Solving using the variety solver is relatively intuitive. Click in the puzzle image to add a letter. Click on a letter and hit "delete" (or "backspace") to remove.
+Solving using the variety solver is relatively intuitive. 
+* **Letters**: Click in the puzzle image to add a letter. Click on a letter and hit "delete" (or "backspace") to remove.
+* **Notes**: Hover over a clue to reveal a pencil icon. Click the icon to add a custom note/text for that clue.
+* **Graying Out**: Click on a clue itself to toggle its completed state, which will gray out the clue.
 
 ## License
 This software is released under the MIT License.
