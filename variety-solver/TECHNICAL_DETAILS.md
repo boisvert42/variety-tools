@@ -41,6 +41,7 @@ This document provides a technical overview of the Crossword Nexus Variety Puzzl
 - When the viewport width is 768px or less:
   - The side `#clue-panels` are hidden.
   - The top `#mobile-clue-bar` becomes visible with `<` and `>` buttons to navigate clues.
+  - The top bar has a fixed height (72px) that never expands or shrinks; clue font size dynamically scales to fit the container without shifting the layout.
   - The clue header displays the clue number and direction/title if multiple clue lists exist (e.g., `1 Counterclockwise`), or just the number if there is only a single clue list.
   - Clue text is shown below the header, with any active notes.
   - Tapping the clue text toggles its completed state (strikethrough / grayed out), synchronized with `localStorage` and the desktop list.

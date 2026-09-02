@@ -31,6 +31,8 @@ function loadPuzzle(data) {
         drawLetter(letter.x, letter.y, letter.letter, false);
       }
     });
+
+    fitClueText();
   }
 
   /** Define what to do when the image loads **/
@@ -189,7 +191,40 @@ function loadPuzzle(data) {
       const isCompleted = !!clue_completed[clue.id];
       mobileClueContent.classList.toggle('completed', isCompleted);
     }
+
+    fitClueText();
   }
+
+  function fitClueText() {
+    if (!mobileClueContent || !mobileClueText) return;
+    const maxFontSize = 17;
+    const minFontSize = 10;
+
+    if (mobileClueContent.clientHeight === 0) {
+      mobileClueText.style.fontSize = maxFontSize + 'px';
+      mobileClueText.style.overflowY = 'hidden';
+      return;
+    }
+
+    let size = maxFontSize;
+    mobileClueText.style.fontSize = size + 'px';
+    mobileClueText.style.overflowY = 'hidden';
+
+    // Step down font size until clue content fits inside container
+    while (
+      mobileClueContent.scrollHeight > mobileClueContent.clientHeight &&
+      size > minFontSize
+    ) {
+      size--;
+      mobileClueText.style.fontSize = size + 'px';
+    }
+
+    if (mobileClueContent.scrollHeight > mobileClueContent.clientHeight) {
+      mobileClueText.style.overflowY = 'auto';
+    }
+  }
+
+  window.addEventListener('resize', fitClueText);
 
   function prevClue() {
     if (flatClues.length === 0) return;
