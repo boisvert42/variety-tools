@@ -447,8 +447,6 @@ div.has-advanced-upload {
   overflow-wrap: break-word;
   width: 100%;
   text-align: center;
-  overflow-y: hidden;
-  max-height: 100%;
 }
 
 .mobile-clue-content.completed .mobile-clue-header,

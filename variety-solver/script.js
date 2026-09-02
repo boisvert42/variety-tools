@@ -200,27 +200,42 @@ function loadPuzzle(data) {
     const maxFontSize = 17;
     const minFontSize = 10;
 
-    if (mobileClueContent.clientHeight === 0) {
+    const containerHeight = mobileClueContent.clientHeight;
+    if (containerHeight === 0) {
       mobileClueText.style.fontSize = maxFontSize + 'px';
       mobileClueText.style.overflowY = 'hidden';
       return;
     }
 
+    let headerHeight = 0;
+    if (mobileClueHeader && mobileClueHeader.style.display !== 'none' && mobileClueHeader.textContent.trim() !== '') {
+      headerHeight = mobileClueHeader.offsetHeight;
+      const headerStyle = window.getComputedStyle(mobileClueHeader);
+      headerHeight += (parseFloat(headerStyle.marginTop) || 0) + (parseFloat(headerStyle.marginBottom) || 0);
+    }
+
+    // Available height for clue text with 3px clearance for font descenders
+    const availableHeight = containerHeight - headerHeight - 3;
+
     let size = maxFontSize;
     mobileClueText.style.fontSize = size + 'px';
     mobileClueText.style.overflowY = 'hidden';
 
-    // Step down font size until clue content fits inside container
+    // Step down font size until clue text height fits within available height
     while (
-      mobileClueContent.scrollHeight > mobileClueContent.clientHeight &&
+      mobileClueText.scrollHeight > availableHeight &&
       size > minFontSize
     ) {
       size--;
       mobileClueText.style.fontSize = size + 'px';
     }
 
-    if (mobileClueContent.scrollHeight > mobileClueContent.clientHeight) {
+    if (mobileClueText.scrollHeight > availableHeight) {
       mobileClueText.style.overflowY = 'auto';
+      mobileClueText.style.maxHeight = availableHeight + 'px';
+    } else {
+      mobileClueText.style.overflowY = 'hidden';
+      mobileClueText.style.maxHeight = '';
     }
   }
 
