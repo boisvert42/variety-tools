@@ -64,9 +64,11 @@ function loadPuzzle(data) {
 
   /** Clues **/
 
-  // If there are no clues, hide the clue panel
+  // If there are no clues, hide the clue panel and mobile clue bar
   if (data['improved-clues'].length === 0) {
-	  document.getElementById('clue-panels').style.display = 'none';
+    document.getElementById('clue-panels').style.display = 'none';
+    const mb = document.getElementById('mobile-clue-bar');
+    if (mb) mb.style.display = 'none';
   }
 
   // Change the width of the clue-numbers depending on size
@@ -117,6 +119,145 @@ function loadPuzzle(data) {
       thisBox.style.display = 'block';
     }
   }
+
+  /** Mobile Clue Bar setup **/
+  const flatClues = [];
+  let flatClueId = 0;
+  for (var i = 0; i < data['improved-clues'].length; i++) {
+    const sectionTitle = data['improved-clues'][i].title || '';
+    data['improved-clues'][i].clues.forEach(obj => {
+      flatClues.push({
+        id: flatClueId,
+        sectionIndex: i,
+        direction: sectionTitle,
+        number: obj.number,
+        text: obj.text,
+        explanation: obj.explanation
+      });
+      flatClueId++;
+    });
+  }
+
+  let currentClueIndex = 0;
+  const mobileClueBar = document.getElementById('mobile-clue-bar');
+  const mobileClueContent = document.getElementById('mobile-clue-content');
+  const mobileClueHeader = document.getElementById('mobile-clue-header');
+  const mobileClueText = document.getElementById('mobile-clue-text');
+  const prevButton = document.getElementById('mobile-prev-clue');
+  const nextButton = document.getElementById('mobile-next-clue');
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function updateMobileClue() {
+    if (!flatClues || flatClues.length === 0) {
+      if (mobileClueBar) mobileClueBar.style.display = 'none';
+      return;
+    }
+    const clue = flatClues[currentClueIndex];
+
+    const isSingleList = data['improved-clues'].length <= 1;
+    const num = (clue.number && clue.number !== '•') ? clue.number.trim() : '';
+    const dir = (!isSingleList && clue.direction) ? clue.direction.trim() : '';
+    let headerText = '';
+    if (num && dir) {
+      headerText = `${num} ${dir}`;
+    } else if (num) {
+      headerText = num;
+    } else if (dir) {
+      headerText = dir;
+    }
+    if (mobileClueHeader) {
+      mobileClueHeader.textContent = headerText;
+      mobileClueHeader.style.display = headerText ? 'block' : 'none';
+    }
+
+    let clueHtml = clue.text || '';
+    if (clue.explanation) {
+      clueHtml += ` <span class="clue-explanation">${clue.explanation}</span>`;
+    }
+    if (clue_notes[clue.id]) {
+      clueHtml += ` <div class="mobile-clue-note">Note: ${escapeHtml(clue_notes[clue.id])}</div>`;
+    }
+    if (mobileClueText) mobileClueText.innerHTML = clueHtml;
+
+    if (mobileClueContent) {
+      const isCompleted = !!clue_completed[clue.id];
+      mobileClueContent.classList.toggle('completed', isCompleted);
+    }
+  }
+
+  function prevClue() {
+    if (flatClues.length === 0) return;
+    currentClueIndex = (currentClueIndex - 1 + flatClues.length) % flatClues.length;
+    updateMobileClue();
+  }
+
+  function nextClue() {
+    if (flatClues.length === 0) return;
+    currentClueIndex = (currentClueIndex + 1) % flatClues.length;
+    updateMobileClue();
+  }
+
+  if (prevButton) {
+    prevButton.addEventListener('click', function(e) {
+      e.stopPropagation();
+      prevClue();
+    });
+  }
+
+  if (nextButton) {
+    nextButton.addEventListener('click', function(e) {
+      e.stopPropagation();
+      nextClue();
+    });
+  }
+
+  if (mobileClueContent) {
+    mobileClueContent.addEventListener('click', function() {
+      if (flatClues.length === 0) return;
+      const clue = flatClues[currentClueIndex];
+      clue_completed[clue.id] = !clue_completed[clue.id];
+      lscache.set(data.clue_completed_save, clue_completed, saveTime);
+      updateMobileClue();
+
+      // Sync with desktop clue list
+      const desktopItem = document.querySelector(`.clue-item[data-clue-id="${clue.id}"]`);
+      if (desktopItem) {
+        desktopItem.classList.toggle('completed', clue_completed[clue.id]);
+      }
+    });
+  }
+
+  if (mobileClueBar) {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    mobileClueBar.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    mobileClueBar.addEventListener('touchend', function(e) {
+      const touchEndX = e.changedTouches[0].screenX;
+      const touchEndY = e.changedTouches[0].screenY;
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          nextClue();
+        } else {
+          prevClue();
+        }
+      }
+    }, { passive: true });
+  }
+
+  // Initial display of mobile clue
+  updateMobileClue();
 
   /** Now for the puzzle functionality **/
   // Create and style the overlay and circle elements
@@ -266,6 +407,7 @@ function loadPuzzle(data) {
     var thisNum = parseInt(inputBox.id.split('-').at(-1))
     clue_notes[thisNum] = inputBox.value;
     lscache.set(data.clue_notes_save, clue_notes, saveTime);
+    updateMobileClue();
   }
 
   // Function to check input box value and hide/show accordingly
@@ -324,6 +466,8 @@ function loadPuzzle(data) {
       item.classList.toggle('completed');
       clue_completed[clueId] = item.classList.contains('completed');
       lscache.set(data.clue_completed_save, clue_completed, saveTime);
+      currentClueIndex = clueId;
+      updateMobileClue();
     });
 
     // Add keydown event listener to the input box

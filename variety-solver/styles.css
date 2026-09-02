@@ -362,3 +362,139 @@ div.has-advanced-upload {
 .font-indicator.large-a {
   font-size: 1.5rem;
 }
+
+/** Mobile clue bar **/
+.mobile-clue-bar {
+  display: none;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #ddd;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mobile-clue-nav {
+  background-color: #ffffff;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #333;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.mobile-clue-nav:hover,
+.mobile-clue-nav:focus {
+  background-color: #e8e8e8;
+  border-color: #999;
+}
+
+.mobile-clue-nav:active {
+  background-color: #d8d8d8;
+}
+
+.mobile-clue-content {
+  flex: 1;
+  margin: 0 10px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  max-height: 120px;
+}
+
+.mobile-clue-header {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+
+.mobile-clue-text {
+  font-size: 1.05rem;
+  line-height: 1.35;
+  color: #111;
+  overflow-y: auto;
+  max-height: 80px;
+  word-wrap: break-word;
+}
+
+.mobile-clue-content.completed .mobile-clue-header,
+.mobile-clue-content.completed .mobile-clue-text {
+  color: #aaa;
+  text-decoration: line-through;
+}
+
+.mobile-clue-note {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #0066cc;
+  margin-top: 3px;
+}
+
+/** Responsive layout for mobile / narrow screens **/
+@media (max-width: 768px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    font-size: 1.1em;
+  }
+
+  #puzzle-container {
+    height: auto;
+    min-height: 100%;
+    align-items: stretch;
+  }
+
+  #container {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .mobile-clue-bar {
+    display: flex;
+  }
+
+  #clue-panels {
+    display: none !important;
+  }
+
+  #puzzle-image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .puzzle-image-wrapper {
+    margin-top: 10px;
+    width: 100%;
+    align-items: center;
+  }
+
+  #puzzle-image {
+    max-width: 96vw;
+    max-height: 65vh;
+  }
+
+  .button-container {
+    margin-top: 15px;
+    margin-bottom: 25px;
+    justify-content: center;
+  }
+}
