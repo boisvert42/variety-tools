@@ -53,4 +53,5 @@ This document provides a technical overview of the Crossword Nexus Variety Puzzl
     - Tapping `▾ Hide` collapses the keyboard and displays a floating pill button (`#vk-show-button`, labeled `⌨ Keyboard`) in the bottom right corner to quickly restore it.
     - The collapse state is preserved across clues within the session via `sessionStorage` (`cnvs_vk_hidden`).
     - The puzzle container automatically adds bottom clearance (`160px`) when the keyboard is open so the full grid and buttons remain scrollable.
+    - **Dynamic Sizing & Canvas Scaling**: On mobile, `#puzzle-image` dynamically limits its height (`calc(100dvh - 300px)`) when the keyboard is open so the grid fits above the keyboard without overlap, and expands (`calc(100dvh - 145px)`) when the keyboard is collapsed. A `ResizeObserver` monitors `#puzzle-image` and calls `resizeAndRedraw()` automatically to keep the `<canvas>` dimensions and entered letters in sync.
 

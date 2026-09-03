@@ -523,12 +523,20 @@ div.has-advanced-upload {
 
   #puzzle-image {
     max-width: 96vw;
-    max-height: 65vh;
+    min-height: 160px;
+    max-height: calc(100vh - 300px);
+    max-height: calc(100dvh - 300px);
+    transition: max-height 0.2s ease-in-out;
+  }
+
+  body.vk-collapsed #puzzle-image {
+    max-height: calc(100vh - 145px);
+    max-height: calc(100dvh - 145px);
   }
 
   .button-container {
-    margin-top: 15px;
-    margin-bottom: 25px;
+    margin-top: 10px;
+    margin-bottom: 20px;
     justify-content: center;
   }
 

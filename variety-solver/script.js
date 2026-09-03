@@ -17,6 +17,7 @@ function loadPuzzle(data) {
   const saveTime = 10000; // how long to keep the localStorage
 
   function resizeAndRedraw() {
+    if (!img.clientWidth || !img.clientHeight) return;
     // Adjust the canvas size in the DOM to match the image
     canvas.style.width = img.clientWidth + 'px';
     canvas.style.height = img.clientHeight + 'px';
@@ -43,6 +44,14 @@ function loadPuzzle(data) {
 
     // Redraw when the window is resized
     window.addEventListener('resize', resizeAndRedraw);
+
+    // Watch for image size changes (e.g. keyboard toggle, viewport changes)
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => {
+        resizeAndRedraw();
+      });
+      ro.observe(img);
+    }
 
     // Initial draw
     resizeAndRedraw();
@@ -405,6 +414,8 @@ function loadPuzzle(data) {
       if (vk) vk.classList.add('vk-hidden');
       document.body.classList.add('vk-collapsed');
       sessionStorage.setItem('cnvs_vk_hidden', 'true');
+      resizeAndRedraw();
+      setTimeout(resizeAndRedraw, 220);
       return;
     }
 
@@ -453,6 +464,8 @@ function loadPuzzle(data) {
       if (vk) vk.classList.remove('vk-hidden');
       document.body.classList.remove('vk-collapsed');
       sessionStorage.removeItem('cnvs_vk_hidden');
+      resizeAndRedraw();
+      setTimeout(resizeAndRedraw, 220);
     });
   }
 
