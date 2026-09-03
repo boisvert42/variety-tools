@@ -524,8 +524,8 @@ div.has-advanced-upload {
   #puzzle-image {
     max-width: 96vw;
     min-height: 160px;
-    max-height: calc(100vh - 300px);
-    max-height: calc(100dvh - 300px);
+    max-height: calc(100vh - 245px);
+    max-height: calc(100dvh - 245px);
     transition: max-height 0.2s ease-in-out;
   }
 
@@ -534,9 +534,14 @@ div.has-advanced-upload {
     max-height: calc(100dvh - 145px);
   }
 
+  /* Hide buttons and font slider when virtual keyboard is active to maximize grid space */
+  body:not(.vk-collapsed) .button-container {
+    display: none;
+  }
+
   .button-container {
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin-top: 15px;
+    margin-bottom: 25px;
     justify-content: center;
   }
 
