@@ -92,6 +92,51 @@
         <div class="modal-body" id="modal-body"></div>
       </div>
     </div>
+
+    <!-- Virtual Keyboard for Mobile -->
+    <div id="virtual-keyboard" class="virtual-keyboard" role="toolbar" aria-label="Virtual Keyboard">
+      <div class="vk-row">
+        <button type="button" class="vk-key" data-key="Q">Q</button>
+        <button type="button" class="vk-key" data-key="W">W</button>
+        <button type="button" class="vk-key" data-key="E">E</button>
+        <button type="button" class="vk-key" data-key="R">R</button>
+        <button type="button" class="vk-key" data-key="T">T</button>
+        <button type="button" class="vk-key" data-key="Y">Y</button>
+        <button type="button" class="vk-key" data-key="U">U</button>
+        <button type="button" class="vk-key" data-key="I">I</button>
+        <button type="button" class="vk-key" data-key="O">O</button>
+        <button type="button" class="vk-key" data-key="P">P</button>
+      </div>
+      <div class="vk-row">
+        <button type="button" class="vk-key" data-key="A">A</button>
+        <button type="button" class="vk-key" data-key="S">S</button>
+        <button type="button" class="vk-key" data-key="D">D</button>
+        <button type="button" class="vk-key" data-key="F">F</button>
+        <button type="button" class="vk-key" data-key="G">G</button>
+        <button type="button" class="vk-key" data-key="H">H</button>
+        <button type="button" class="vk-key" data-key="J">J</button>
+        <button type="button" class="vk-key" data-key="K">K</button>
+        <button type="button" class="vk-key" data-key="L">L</button>
+      </div>
+      <div class="vk-row">
+        <button type="button" class="vk-key vk-key-special vk-key-hide" data-action="hide" aria-label="Hide keyboard" title="Hide keyboard">&#x25BE; Hide</button>
+        <button type="button" class="vk-key" data-key="Z">Z</button>
+        <button type="button" class="vk-key" data-key="X">X</button>
+        <button type="button" class="vk-key" data-key="C">C</button>
+        <button type="button" class="vk-key" data-key="V">V</button>
+        <button type="button" class="vk-key" data-key="B">B</button>
+        <button type="button" class="vk-key" data-key="N">N</button>
+        <button type="button" class="vk-key" data-key="M">M</button>
+        <button type="button" class="vk-key" data-key="+">+</button>
+        <button type="button" class="vk-key vk-key-special vk-key-backspace" data-key="Backspace" aria-label="Backspace" title="Backspace">&#x232B;</button>
+      </div>
+    </div>
+
+    <!-- Floating button to restore keyboard when collapsed -->
+    <button type="button" id="vk-show-button" class="vk-show-button" aria-label="Show keyboard" title="Show keyboard">
+      <span class="vk-show-icon">&#9000;</span>
+      <span class="vk-show-label">Keyboard</span>
+    </button>
   </div>
 
   <!-- Load main puzzle logic -->
