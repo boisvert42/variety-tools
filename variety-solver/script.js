@@ -17,6 +17,7 @@ function loadPuzzle(data) {
   const saveTime = 10000; // how long to keep the localStorage
 
   function resizeAndRedraw() {
+    if (!img.clientWidth || !img.clientHeight) return;
     // Adjust the canvas size in the DOM to match the image
     canvas.style.width = img.clientWidth + 'px';
     canvas.style.height = img.clientHeight + 'px';
@@ -43,6 +44,14 @@ function loadPuzzle(data) {
 
     // Redraw when the window is resized
     window.addEventListener('resize', resizeAndRedraw);
+
+    // Watch for image size changes (e.g. keyboard toggle, viewport changes)
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => {
+        resizeAndRedraw();
+      });
+      ro.observe(img);
+    }
 
     // Initial draw
     resizeAndRedraw();
@@ -368,6 +377,8 @@ function loadPuzzle(data) {
   overlay.addEventListener('click', function() {
     overlay.style.display = 'none'; // Hide the overlay
     document.removeEventListener('keydown', handleKeydown); // Remove the keydown event listener
+    clickX = undefined;
+    clickY = undefined;
   });
 
   // Function to handle keydown events
@@ -382,7 +393,80 @@ function loadPuzzle(data) {
       overlay.style.display = 'none'; // Hide the overlay
       // Remove the keydown event listener
       document.removeEventListener('keydown', handleKeydown);
+      clickX = undefined;
+      clickY = undefined;
     }
+  }
+
+  /** Virtual Keyboard setup **/
+  const vk = document.getElementById('virtual-keyboard');
+  const vkShowBtn = document.getElementById('vk-show-button');
+
+  // Check saved collapse state
+  if (sessionStorage.getItem('cnvs_vk_hidden') === 'true') {
+    if (vk) vk.classList.add('vk-hidden');
+    document.body.classList.add('vk-collapsed');
+  }
+
+  // Connect virtual keyboard action callback
+  window._cnvs_onVirtualKey = function(key, action) {
+    if (action === 'hide') {
+      if (vk) vk.classList.add('vk-hidden');
+      document.body.classList.add('vk-collapsed');
+      sessionStorage.setItem('cnvs_vk_hidden', 'true');
+      resizeAndRedraw();
+      setTimeout(resizeAndRedraw, 220);
+      return;
+    }
+
+    if (overlay.style.display === 'flex' && clickX !== undefined && clickY !== undefined) {
+      if (key === 'Backspace') {
+        removeLetter(clickX, clickY);
+      } else if (key) {
+        drawLetter(clickX, clickY, key);
+      }
+      overlay.style.display = 'none';
+      document.removeEventListener('keydown', handleKeydown);
+      clickX = undefined;
+      clickY = undefined;
+    }
+  };
+
+  if (vk && !vk.dataset.initialized) {
+    vk.dataset.initialized = 'true';
+    let lastPointerTime = 0;
+    vk.addEventListener('pointerdown', function(e) {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      lastPointerTime = Date.now();
+      if (typeof window._cnvs_onVirtualKey === 'function') {
+        window._cnvs_onVirtualKey(btn.getAttribute('data-key'), btn.getAttribute('data-action'));
+      }
+    });
+
+    vk.addEventListener('click', function(e) {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      e.stopPropagation();
+      if (Date.now() - lastPointerTime < 500) return;
+      if (typeof window._cnvs_onVirtualKey === 'function') {
+        window._cnvs_onVirtualKey(btn.getAttribute('data-key'), btn.getAttribute('data-action'));
+      }
+    });
+  }
+
+  if (vkShowBtn && !vkShowBtn.dataset.initialized) {
+    vkShowBtn.dataset.initialized = 'true';
+    vkShowBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (vk) vk.classList.remove('vk-hidden');
+      document.body.classList.remove('vk-collapsed');
+      sessionStorage.removeItem('cnvs_vk_hidden');
+      resizeAndRedraw();
+      setTimeout(resizeAndRedraw, 220);
+    });
   }
 
   // Function to draw a letter centered at (x, y) on the canvas
