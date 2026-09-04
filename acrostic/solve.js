@@ -11,8 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const Module = require(path.join(__dirname, 'highs', 'highs.js'));
-const AcrosticSolver = require(path.join(__dirname, 'highs', 'solver.js'));
+const AcrosticSolver = require(path.join(__dirname, 'glpk', 'solver.js'));
 
 function printHelp() {
   console.log(`
@@ -111,9 +110,8 @@ function loadWordlist(customPath) {
 }
 
 async function solveAcrostic(quote, source, options = {}) {
-  const highs = await Module({
-    locateFile: (file) => path.join(__dirname, 'highs', file)
-  });
+  const GLPK = (await import('./glpk/glpk.js')).default;
+  const glpk = await GLPK();
 
   const wordlistText = options.wordlistText || loadWordlist(options.wordlistPath);
 
@@ -124,7 +122,7 @@ async function solveAcrostic(quote, source, options = {}) {
     minScore: options.minScore !== undefined ? options.minScore : 50,
     lenDistance: options.distance !== undefined ? options.distance : 3,
     maxCandidatesPerLetter: options.maxCandidatesPerLetter || null
-  }, highs);
+  }, glpk);
 }
 
 async function main() {

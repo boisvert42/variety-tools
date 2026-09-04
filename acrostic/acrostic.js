@@ -68,7 +68,7 @@
 
   // Initialize Web Worker
   function initWorker() {
-    worker = new Worker('highs/worker.js');
+    worker = new Worker('glpk/worker.js', { type: 'module' });
 
     worker.onmessage = function (e) {
       const msg = e.data || {};

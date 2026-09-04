@@ -6,7 +6,7 @@ Tools for acrostic puzzle creation.
 
 Open `index.html` in any modern browser (served via an HTTP server or GitHub Pages). 
 
-The web solver runs entirely client-side using a Web Worker and the [HiGHS](https://highs.dev/) mixed-integer linear programming (MIP) solver compiled to WebAssembly.
+The web solver runs entirely client-side using a Web Worker and the [GLPK](https://www.gnu.org/software/glpk/) mixed-integer linear programming (MIP) solver compiled to WebAssembly via [glpk.js](https://github.com/jvail/glpk.js).
 
 ## Node.js CLI Solver
 
@@ -54,6 +54,6 @@ You can also use `acrostic_ide.py` from within an editor, or edit the file and r
 
 ## Credits & Licenses
 
-* **HiGHS WebAssembly Solver**: Included in `highs/` via [highs-js](https://github.com/lovasoa/highs-js), compiling [HiGHS](https://highs.dev/). Both are licensed under the [MIT License](highs/LICENSE).
+* **GLPK WebAssembly Solver**: Included in `glpk/` via [glpk.js](https://github.com/jvail/glpk.js), compiling [GNU GLPK](https://www.gnu.org/software/glpk/). Both are licensed under the [GNU General Public License v3.0](glpk/LICENSE).
 * **Spread The Wordlist**: Wordlist from [Spread The Wordlist](https://www.spreadthewordlist.com/), licensed under [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 * **fflate**: Fast, lightweight in-browser decompression library (https://github.com/101arrowz/fflate), licensed under the MIT License.
