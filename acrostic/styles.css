@@ -1,148 +1,264 @@
+/* Mobile-friendly and responsive styles for Acrostic Machine */
+
 /* Spinner styles */
 #spinner {
-border: 8px solid #f3f3f3;
-border-top: 8px solid #3498db;
-border-radius: 50%;
-width: 60px;
-height: 60px;
-animation: spin 1s linear infinite;
-margin: 40px auto;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 30px auto;
 }
+
 @keyframes spin {
-0% { transform: rotate(0deg); }
-100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
-/* Hide controls until ready */
+
+/* Base typography and background */
+body {
+  font-size: 18px;
+  background-color: #dedede;
+  color: #222;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 22px;
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 20px 50px 20px;
+  box-sizing: border-box;
+}
+
+h2 {
+  font-size: 1.8em;
+  margin-top: 0.5em;
+  margin-bottom: 0.3em;
+  text-align: center;
+}
+
+.header-links {
+  text-align: center;
+  margin-bottom: 1.2em;
+  font-size: 0.85em;
+  line-height: 1.8;
+}
+
+.header-links a {
+  display: inline-block;
+  color: #1eaedb;
+  text-decoration: none;
+}
+
+.header-links a:hover {
+  text-decoration: underline;
+}
+
+/* Hide controls until solver is ready */
 #controls {
   display: none;
 }
-/* Make the font bigger for old eyes */
-body {
-  font-size: 200%;
-  background-color: #dedede;
+
+/* Form inputs and textareas */
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 0.8em;
+  margin-bottom: 0.2em;
+  font-size: 0.9em;
 }
 
-textarea, input, pre {
-  font-size: 125%;
-  width: 100%;         /* fills the container */
-  max-width: 50ch;     /* up to ~50 characters wide on larger screens */
-  box-sizing: border-box; /* includes padding in the width */
-  background-color: #efefef;
+textarea, input[type="text"], input[type="number"], pre {
+  font-family: inherit;
+  font-size: 16px; /* Prevents iOS auto-zoom on focus */
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f7f7f7;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 0.5em;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  textarea, input[type="text"], input[type="number"], pre {
+    font-size: 18px;
+  }
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Action buttons */
+button, .button-primary {
+  display: inline-block;
+  width: auto;
+  min-height: 38px;
+  height: 38px;
+  line-height: 36px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  cursor: pointer;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin: 8px 0;
+  touch-action: manipulation;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  button, .button-primary {
+    width: 100%;
+  }
+}
+
+.button-primary {
+  background-color: #1eaedb;
+  color: #fff;
+  border: 1px solid #1eaedb;
+}
+
+.button-primary:hover, .button-primary:focus {
+  background-color: #0fa0ce;
+  border-color: #0fa0ce;
 }
 
 #wordlist-button {
   background-color: #efefef;
+  border: 1px solid #bbb;
+  color: #333;
+}
+
+#wordlist-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Output pre box */
+pre#output {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: #f9f9f9;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  min-height: 100px;
+  padding: 14px;
+  margin-top: 14px;
+  margin-bottom: 20px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.footer-note {
+  font-size: 0.85em;
+  text-align: center;
+  margin-top: 1.5em;
+  color: #555;
 }
 
 /**
-* Modal box
-**/
-/* The Modal (background) */
+ * Modal Box (Upload word list)
+ **/
 .cw-modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
-  padding-top: 30px; /* location of the box */
+  display: none;
+  position: fixed;
+  z-index: 100;
   left: 0;
   top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0, 0, 0); /* Fallback color */
-  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  padding: 20px 10px;
 }
 
-/* Modal Content/Box */
 .modal-content {
   position: relative;
   background-color: #fefefe;
-  margin: auto;
-  padding: 0;
-  border: 1px solid #888;
-  width: 80%;
-  max-width: 600px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  border-radius: 5px;
+  margin: 30px auto;
+  border-radius: 8px;
+  width: 92%;
+  max-width: 480px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  -webkit-animation-name: animatetop;
-  -webkit-animation-duration: 0.4s;
-  animation-name: animatetop;
-  animation-duration: 0.3s;
+  animation: animatetop 0.25s ease-out;
 }
 
-/* Modal Header */
 .modal-header {
-  padding: 2px 16px;
-  background-color: #777777;
-  color: white;
-  text-align: center;
-  height: 40px;
-  font-size: max(1.1em, 14px);
-  font-weight: 500;
+  padding: 12px 16px;
+  background-color: #666;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Modal Body */
+.modal-title {
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+.modal-close {
+  color: #fff;
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.modal-close:hover {
+  color: #ccc;
+}
+
 .modal-body {
-  padding: 2px 16px;
-  margin: 1em;
-  font-size: max(0.8em, 12px);
+  padding: 16px;
+  font-size: 0.9em;
 }
 
-/* Modal Footer */
+.modal-body input[type="file"] {
+  font-size: 16px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
 .modal-footer {
   border-top: 1px solid #e5e5e5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
+  padding: 10px 16px;
+  text-align: right;
 }
 
-/* Modal Title */
-.modal-title {
-  line-height: 40px; /* same as the containing div, to vertically center */
-}
-
-/* Modal Animation */
-@-webkit-keyframes animatetop {
-  from {
-      top: -300px;
-      opacity: 0;
-  }
-  to {
-      top: 0;
-      opacity: 1;
-  }
+.modal-footer button {
+  width: auto;
+  min-height: 38px;
+  padding: 6px 16px;
+  margin: 0;
 }
 
 @keyframes animatetop {
   from {
-      top: -300px;
-      opacity: 0;
+    transform: translateY(-40px);
+    opacity: 0;
   }
   to {
-      top: 0;
-      opacity: 1;
+    transform: translateY(0);
+    opacity: 1;
   }
-}
-
-/* The Close Button */
-.modal-close {
-  color: white;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.modal-close:hover,
-.modal-close:focus {
-  color: #333333;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* The modal footer button */
-.modal-button {
-  /* the footer is 40px, so these numbers are to center it */
-  margin: 10px auto;
-  height: 20px;
 }

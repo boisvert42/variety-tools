@@ -1,74 +1,137 @@
-// Make py global
-let py = null;
+// HiGHS Acrostic Controller
+(function () {
+  'use strict';
 
-// 1) Bootstrap Pyodide & swiglpk once
-const initPromise = (async () => {
-	// Load pyodide and the swiglpk package
-  py = await loadPyodide();
-  await py.loadPackage("swiglpk");
+  let worker = null;
+  let isReady = false;
+  let isSolving = false;
+  let solveResolve = null;
 
-  // Fetch the gzipped word list
-  const resp = await fetch("spreadthewordlist.dict.gz");
-  const buf = await resp.arrayBuffer();
+  const spinner = document.getElementById('spinner');
+  const loadingText = document.getElementById('loading-text');
+  const controls = document.getElementById('controls');
+  const solveBtn = document.getElementById('solve-btn');
+  const outputEl = document.getElementById('output');
 
-	// Decompress word list with pako into a UTF-8 string
-  const compressed = new Uint8Array(buf);
-  const dictText = pako.ungzip(compressed, {
-    to: "string"
+  // Initialize Worker
+  function initWorker() {
+    worker = new Worker('highs/worker.js');
+
+    worker.onmessage = function (e) {
+      const msg = e.data || {};
+
+      if (msg.type === 'ready') {
+        // Solver is ready in worker
+      } else if (msg.type === 'wordlist_cached') {
+        isReady = true;
+        if (spinner) spinner.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none';
+        if (controls) controls.style.display = 'block';
+      } else if (msg.type === 'progress') {
+        if (outputEl && isSolving) {
+          outputEl.textContent = msg.message + '\n';
+        }
+      } else if (msg.type === 'result') {
+        isSolving = false;
+        solveBtn.disabled = false;
+        solveBtn.textContent = 'Create acrostic';
+
+        if (solveResolve) {
+          solveResolve(msg);
+          solveResolve = null;
+        }
+      } else if (msg.type === 'error') {
+        console.error('Worker error:', msg.error);
+        if (loadingText) loadingText.textContent = 'Error loading solver: ' + msg.error;
+      }
+    };
+
+    worker.onerror = function (err) {
+      console.error('Worker error event:', err);
+      if (loadingText) loadingText.textContent = 'Error starting Web Worker: ' + (err.message || 'Check console');
+    };
+  }
+
+  // Allow custom word list upload from wordlist.js
+  window.setCustomWordlist = function (text) {
+    if (worker) {
+      worker.postMessage({ type: 'set_wordlist', text: text });
+      alert('Custom wordlist loaded (' + text.split('\n').length.toLocaleString() + ' words).');
+    }
+  };
+
+  // Bootstrap dictionary and worker
+  async function init() {
+    initWorker();
+
+    try {
+      loadingText.textContent = 'Loading wordlist...';
+      const resp = await fetch('spreadthewordlist.dict.gz');
+      const buf = await resp.arrayBuffer();
+
+      loadingText.textContent = 'Decompressing wordlist...';
+      const compressed = new Uint8Array(buf);
+      const dictText = pako.ungzip(compressed, { to: 'string' });
+
+      loadingText.textContent = 'Initializing HiGHS solver...';
+      worker.postMessage({ type: 'set_wordlist', text: dictText });
+    } catch (err) {
+      console.error('Initialization error:', err);
+      loadingText.textContent = 'Failed to load dictionary: ' + err.message;
+    }
+  }
+
+  // Handle solve submission
+  solveBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!isReady || isSolving) return;
+
+    const quote = document.getElementById('quote-input').value;
+    const source = document.getElementById('source-input').value;
+
+    const exclStr = document.getElementById('excluded-input').value;
+    const excluded = exclStr.trim().split(',').map(s => s.trim()).filter(Boolean);
+
+    const inclStr = document.getElementById('included-input').value;
+    const included = inclStr.trim().split(',').map(s => s.trim()).filter(Boolean);
+
+    if (!quote.trim() || !source.trim()) {
+      outputEl.textContent = 'Please enter both a quote and a source.';
+      return;
+    }
+
+    isSolving = true;
+    solveBtn.disabled = true;
+    solveBtn.textContent = 'Solving...';
+    outputEl.textContent = 'Preparing problem...\n';
+
+    const solvePromise = new Promise((resolve) => {
+      solveResolve = resolve;
+    });
+
+    worker.postMessage({
+      type: 'solve',
+      quote: quote,
+      source: source,
+      excluded: excluded,
+      included: included
+    });
+
+    const result = await solvePromise;
+
+    if (result.success) {
+      if (result.solution && result.solution.length > 0) {
+        const formatted = result.solution.map(w => w.toUpperCase()).join('\n');
+        const elapsedSec = (result.elapsedMs / 1000).toFixed(2);
+        outputEl.textContent = `${formatted}\n\n[Solved in ${elapsedSec}s]`;
+      } else {
+        outputEl.textContent = 'No solutions found.';
+      }
+    } else {
+      outputEl.textContent = 'Error: ' + result.error;
+    }
   });
 
-  // Write the decompressed text into Pyodide's virtual FS
-  py.FS.writeFile("spreadthewordlist.dict", dictText);
-
-	// Load in acrostic_glp
-	const resp_glp = await fetch("acrostic_glp.py");
-	const text_glp = await resp_glp.text();
-	py.FS.writeFile("acrostic_glp.py", text_glp);
-
-	// Import
-	await py.runPythonAsync("from acrostic_glp import create_acrostic2");
-
-  // Once everything is loaded, hide spinner and show controls
-  document.getElementById('spinner').style.display = 'none';
-  document.getElementById('loading-text').style.display = 'none';
-  document.getElementById('controls').style.display = 'block';
-  return py;
+  // Start initialization
+  init();
 })();
-
-// Wire up the UI
-document.getElementById('solve-btn').addEventListener('click', async (e) => {
-  e.preventDefault();
-  const quote = document.getElementById('quote-input').value;
-  const source = document.getElementById('source-input').value;
-
-  const exclStr = document.getElementById('excluded-input').value;
-  const excluded = exclStr.trim().split(',').filter(Boolean);
-
-  const inclStr = document.getElementById('included-input').value;
-  const included = inclStr.trim().split(',').filter(Boolean);
-
-  const out = document.getElementById('output');
-  out.textContent = 'Solving...\n';
-
-  const py = await initPromise;
-  py.globals.set('quote', quote);
-  py.globals.set('source', source);
-  py.globals.set('excluded', excluded);
-  py.globals.set('included', included);
-
-  // Redirect stdout and stderr to output element
-  //py.setStdout({batched: (msg) => { out.textContent += msg; }});
-  //py.setStderr({batched: (msg) => { out.textContent += msg; }});
-
-  try {
-		const res = await py.runPythonAsync(`create_acrostic2(quote, source, excluded, included)`);
-    const sol = res.toJs();
-    if (sol.length) {
-      out.textContent = sol.join('\n');
-    } else {
-      out.textContent = 'No solutions found.';
-    }
-  } catch (e) {
-    out.textContent += 'Error: ' + e;
-  }
-});

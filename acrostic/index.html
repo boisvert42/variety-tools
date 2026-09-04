@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Acrostic Machine</title>
     <!-- Stylesheets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" />
@@ -15,9 +16,9 @@
     <div class="container">
       <h2>The Acrostic Machine</h2>
 
-      <div class="row">
-        <a href="https://www.youtube.com/watch?v=DLFDL4nQ1iM">How-To Video</a> •
-        <a href="https://github.com/crosswordnexus/variety-tools/blob/main/acrostic/acrostic_ilp.py">Source code</a> •
+      <div class="row header-links">
+        <a href="https://www.youtube.com/watch?v=DLFDL4nQ1iM" target="_blank" rel="noopener">How-To Video</a> •
+        <a href="https://github.com/crosswordnexus/variety-tools/blob/main/acrostic/acrostic_ilp.py" target="_blank" rel="noopener">Source code</a> •
         <a href="mailto:crosswordnexus@gmail.com">Questions? Concerns?</a>
       </div>
 
@@ -25,35 +26,33 @@
       <div id="spinner"></div>
       <div style="text-align:center;" id="loading-text">Loading the acrostic machine...</div>
 
-      <!-- Controls hidden until Pyodide/swiglpk initialized -->
+      <!-- Controls hidden until HiGHS solver initialized -->
       <div id="controls">
         <form id="solver-form">
             <label for="quote-input">Quote</label>
-            <textarea id="quote-input" rows="6"></textarea><br />
+            <textarea id="quote-input" rows="5" placeholder="Enter the full quote..."></textarea>
 
             <label for="source-input">Source</label>
-            <input id="source-input" type="text" size="50" /><br />
+            <input id="source-input" type="text" placeholder="e.g. Author Title" />
 
             <label for="excluded-input">Words to exclude (comma-separated)</label>
-            <input id="excluded-input" type="text" size="50" /><br />
+            <input id="excluded-input" type="text" placeholder="Optional" />
 
             <label for="included-input">Words to *include* (comma-separated)</label>
-            <input id="included-input" type="text" size="50" /><br />
+            <input id="included-input" type="text" placeholder="Optional" />
 
             <button class="button-primary" id="solve-btn" type="submit">Create acrostic</button>
         </form>
 
-        <button type="submit" id="wordlist-button" value="Upload wordlist">(Optional) Upload wordlist</button>
+        <button type="button" id="wordlist-button">(Optional) Upload wordlist</button>
 
         <pre id="output"></pre>
       </div>
-      <div class="row">
-        Results can be imported into the <a href="https://jpd236.github.io/kotwords/acrostic.html">Kotwords acrostic JPZ generator.</a>
+      <div class="row footer-note">
+        Results can be imported into the <a href="https://jpd236.github.io/kotwords/acrostic.html" target="_blank" rel="noopener">Kotwords acrostic JPZ generator.</a>
       </div>
     </div>
 
-    <!-- Load Pyodide via classic script so loadPyodide() is global -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.6/full/pyodide.js"></script>
     <!-- Load the main acrostic JS -->
     <script src="acrostic.js"></script>
     <!-- Word list management -->

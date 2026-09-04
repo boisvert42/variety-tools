@@ -16,7 +16,9 @@ function processWordList(fileContents, minScore) {
   });
 
   const sortedText = lines.join("\n");
-  py.FS.writeFile("spreadthewordlist.dict", sortedText);
+  if (typeof window.setCustomWordlist === 'function') {
+    window.setCustomWordlist(sortedText);
+  }
 }
 
 
