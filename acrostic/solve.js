@@ -120,7 +120,7 @@ async function solveAcrostic(quote, source, options = {}) {
     excluded: options.excluded || [],
     included: options.included || [],
     minScore: options.minScore !== undefined ? options.minScore : 50,
-    lenDistance: options.distance !== undefined ? options.distance : 3,
+    lenDistance: options.distance !== undefined ? options.distance : 1,
     maxCandidatesPerLetter: options.maxCandidatesPerLetter || null
   }, glpk);
 }
