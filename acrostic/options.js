@@ -8,7 +8,7 @@
 
   // Global solver options shared with acrostic.js
   window.solverOptions = window.solverOptions || {
-    lenDistance: 3,
+    lenDistance: 1,
     minScore: 50,
     wordlistName: 'Default (Spread The Wordlist)',
     isCustom: false
