@@ -52,11 +52,19 @@
     };
   }
 
-  // Allow custom word list upload from wordlist.js
+  let defaultDictText = '';
+
+  // Options support
   window.setCustomWordlist = function (text) {
     if (worker) {
       worker.postMessage({ type: 'set_wordlist', text: text });
       alert('Custom wordlist loaded (' + text.split('\n').length.toLocaleString() + ' words).');
+    }
+  };
+
+  window.resetDefaultWordlist = function () {
+    if (worker && defaultDictText) {
+      worker.postMessage({ type: 'set_wordlist', text: defaultDictText });
     }
   };
 
@@ -72,6 +80,7 @@
       loadingText.textContent = 'Decompressing wordlist...';
       const decompressed = fflate.gunzipSync(new Uint8Array(buf));
       const dictText = fflate.strFromU8(decompressed);
+      defaultDictText = dictText;
 
       loadingText.textContent = 'Initializing HiGHS solver...';
       worker.postMessage({ type: 'set_wordlist', text: dictText });
@@ -109,12 +118,15 @@
       solveResolve = resolve;
     });
 
+    const opts = window.solverOptions || {};
     worker.postMessage({
       type: 'solve',
       quote: quote,
       source: source,
       excluded: excluded,
-      included: included
+      included: included,
+      minScore: opts.minScore !== undefined ? opts.minScore : 50,
+      lenDistance: opts.lenDistance !== undefined ? opts.lenDistance : 3
     });
 
     const result = await solvePromise;
