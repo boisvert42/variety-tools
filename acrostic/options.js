@@ -76,10 +76,16 @@
     const title = 'Solver Options';
 
     const html = `
-      <label for="len-distance-input">Length distance (allowed deviation from mean length):</label>
+      <label for="len-distance-input" class="label-with-tip">
+        Maximum Length Deviation
+        <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Smaller values produce more uniform answer lengths. Larger values broaden the search space if a solution is hard to find.">ⓘ</span>
+      </label>
       <input type="number" id="len-distance-input" min="1" max="10" step="1" value="${opts.lenDistance}" />
 
-      <label for="min-score-input">Minimum word score (0 - 100):</label>
+      <label for="min-score-input" class="label-with-tip">
+        Minimum Word Score (0 - 100)
+        <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Only dictionary entries with a score at or above this threshold will be considered.">ⓘ</span>
+      </label>
       <input type="number" id="min-score-input" min="0" max="100" step="1" value="${opts.minScore}" />
 
       <label for="wordlist-file-input">Word list:</label>

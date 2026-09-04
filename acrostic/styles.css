@@ -510,8 +510,94 @@ pre#output {
   box-shadow: var(--shadow-lg);
   max-width: 480px;
   margin: 40px auto;
-  overflow: hidden;
+  overflow: visible;
   animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Tooltip styles */
+.label-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: help;
+  position: relative;
+  user-select: none;
+  border: 1px solid var(--color-border);
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.info-tip:hover,
+.info-tip:focus {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+/* Tooltip bubble */
+.info-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  background-color: #0f172a;
+  color: #f8fafc;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: normal;
+  width: max-content;
+  max-width: 250px;
+  text-align: left;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  z-index: 2000;
+}
+
+/* Tooltip arrow */
+.info-tip::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #0f172a;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  z-index: 2000;
+}
+
+.info-tip:hover::after,
+.info-tip:hover::before,
+.info-tip:focus::after,
+.info-tip:focus::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
 }
 
 @keyframes modalPop {
