@@ -1,4 +1,4 @@
-// HiGHS Acrostic Controller
+// GLPK Acrostic Controller
 (function () {
   'use strict';
 
@@ -138,7 +138,7 @@
       defaultDictText = dictText;
       activeDictText = dictText;
 
-      loadingText.textContent = 'Initializing HiGHS solver...';
+      loadingText.textContent = 'Initializing GLPK solver...';
       worker.postMessage({ type: 'set_wordlist', text: dictText });
     } catch (err) {
       console.error('Initialization error:', err);
