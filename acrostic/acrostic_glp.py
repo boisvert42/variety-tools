@@ -33,6 +33,7 @@ import math
 import itertools
 from pathlib import Path
 import math
+import time
 
 # Not strictly needed
 try:
@@ -429,6 +430,8 @@ def main():
         help='Word list to use (default: spreadthewordlist.dict)')
     parser.add_argument('-m', '--minscore', type=int, default=MIN_SCORE,
         help='Minimum score of words to use from the word list')
+    parser.add_argument('-d', '--len_distance', '--distance', dest='len_distance', type=int, default=LEN_DISTANCE,
+        help='Maximum length deviation from mean word length (default: 3)')
 
     args = parser.parse_args()
     if args.excluded:
@@ -436,15 +439,20 @@ def main():
     if args.included:
         included=[_.strip().lower() for _ in args.included.split(',')]
 
+    t1 = time.time()
     soln_array = create_acrostic2(
         args.quote, args.source,
         excluded_words=excluded,
         included_words=included,
         wordlist=args.wordlist,
-        min_score=args.minscore
+        min_score=args.minscore,
+        len_distance=args.len_distance
     )
+    t2 = time.time()
     for x in soln_array:
         print(x.upper())
+
+    print(f"Time taken: {t2-t1:.1f} seconds")
 
 #%%
 if __name__ == "__main__":

@@ -47,7 +47,7 @@ Requirements: swiglpk (`pip install swiglpk`)
 
 Usage: 
 ```bash
-python acrostic_glp.py -q "Quote text here" -s "Author Name"
+python acrostic_glp.py -q "Quote text here" -s "Author Name" [-d 1] [-m 50]
 ```
 
 You can also use `acrostic_ide.py` from within an editor, or edit the file and run it from the command line.
