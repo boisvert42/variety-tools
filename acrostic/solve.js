@@ -148,7 +148,7 @@ async function main() {
       wordlistPath: args.wordlist
     });
 
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     if (!solution || solution.length === 0) {
       console.log(`No solutions found. (${elapsed}s)`);
@@ -158,6 +158,8 @@ async function main() {
     for (const word of solution) {
       console.log(word.toUpperCase());
     }
+
+    console.log(`Time taken: ${elapsed} seconds`);
   } catch (err) {
     console.error('Error:', err.message || err);
     process.exit(1);
