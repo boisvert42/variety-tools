@@ -1,61 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Acrostic Machine</title>
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" />
+    <title>The Acrostic Machine</title>
+    <!-- Modern Stylesheet -->
     <link rel="stylesheet" href="styles.css" />
-    <!-- fflate for fast, lightweight unzipping -->
+    <!-- fflate for fast unzipping -->
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   </head>
   <body>
-	<!-- modal box placeholder -->
+    <!-- Modal container -->
     <div class="cw-modal" id="cw-modal"></div>
-    <div class="container">
-      <h2>The Acrostic Machine</h2>
 
-      <div class="row header-links">
-        <a href="https://www.youtube.com/watch?v=DLFDL4nQ1iM" target="_blank" rel="noopener">How-To Video</a> •
-        <a href="https://github.com/crosswordnexus/variety-tools/blob/main/acrostic/acrostic_ilp.py" target="_blank" rel="noopener">Source code</a> •
-        <a href="mailto:crosswordnexus@gmail.com">Questions? Concerns?</a>
-      </div>
+    <div class="app-wrapper">
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="title-badge-row">
+          <h1 class="app-title">The Acrostic Machine</h1>
+          <!--<span class="badge">HiGHS WASM</span>-->
+        </div>
+        <!--
+        <p class="app-subtitle">Generate acrostic answer words matching your quote and source initials</p>
+        -->
+        <nav class="nav-links">
+          <a class="nav-link" href="https://www.youtube.com/watch?v=DLFDL4nQ1iM" target="_blank" rel="noopener">
+            ▶ Video Tutorial
+          </a>
+          <span class="nav-divider">•</span>
+          <a class="nav-link" href="https://github.com/crosswordnexus/variety-tools/tree/main/acrostic" target="_blank" rel="noopener">
+            GitHub Source
+          </a>
+          <span class="nav-divider">•</span>
+          <a class="nav-link" href="mailto:crosswordnexus@gmail.com">
+            Questions?
+          </a>
+        </nav>
+      </header>
 
-      <!-- Spinner shown while loading -->
-      <div id="spinner"></div>
-      <div style="text-align:center;" id="loading-text">Loading the acrostic machine...</div>
+      <!-- Main Application Card -->
+      <main class="card">
+        <!-- Spinner shown while loading dictionary & solver -->
+        <div id="spinner"></div>
+        <div id="loading-text">Loading solver and dictionary...</div>
 
-      <!-- Controls hidden until HiGHS solver initialized -->
-      <div id="controls">
-        <form id="solver-form">
-            <label for="quote-input">Quote</label>
-            <textarea id="quote-input" rows="5" placeholder="Enter the full quote..."></textarea>
+        <!-- Interactive controls (revealed once ready) -->
+        <div id="controls">
+          <form id="solver-form">
+            <div class="form-group">
+              <div class="label-row">
+                <label for="quote-input">Quote</label>
+                <span class="label-counter" id="quote-count">0 letters</span>
+              </div>
+              <textarea
+                id="quote-input"
+                rows="4"
+                placeholder="Enter or paste the full quote text here..."
+                required
+              ></textarea>
+            </div>
 
-            <label for="source-input">Source</label>
-            <input id="source-input" type="text" placeholder="e.g. Author Title" />
+            <div class="form-group">
+              <div class="label-row">
+                <label for="source-input">Source</label>
+                <span class="label-counter" id="source-count">0 letters</span>
+              </div>
+              <input
+                id="source-input"
+                type="text"
+                placeholder="e.g. Douglas Adams, The Hitchhiker's Guide"
+                required
+              />
+            </div>
 
-            <label for="excluded-input">Words to exclude (comma-separated)</label>
-            <input id="excluded-input" type="text" placeholder="Optional" />
+            <div class="grid-2col">
+              <div class="form-group">
+                <label for="excluded-input">Words to exclude</label>
+                <input
+                  id="excluded-input"
+                  type="text"
+                  placeholder="e.g. apple, banana"
+                />
+              </div>
 
-            <label for="included-input">Words to *include* (comma-separated)</label>
-            <input id="included-input" type="text" placeholder="Optional" />
+              <div class="form-group">
+                <label for="included-input">Words to include</label>
+                <input
+                  id="included-input"
+                  type="text"
+                  placeholder="e.g. galaxy, robot"
+                />
+              </div>
+            </div>
 
-            <button class="button-primary" id="solve-btn" type="submit">Create acrostic</button>
-        </form>
+            <!-- Action buttons -->
+            <div class="actions-row">
+              <button class="btn-primary" id="solve-btn" type="submit">
+                <span>Create Acrostic</span>
+              </button>
+              <button class="btn-secondary" id="options-button" type="button">
+                <span>⚙️ Options</span>
+              </button>
+            </div>
+          </form>
 
-        <button type="button" id="options-button">Options</button>
+          <!-- Results Section -->
+          <section class="results-card" id="results-card">
+            <div class="results-header">
+              <h3 class="results-title">
+                <span>Solution</span>
+                <span class="time-badge" id="time-badge">0.00s</span>
+              </h3>
+              <button class="copy-btn" id="copy-btn" type="button">
+                📋 Copy Words
+              </button>
+            </div>
 
-        <pre id="output"></pre>
-      </div>
-      <div class="row footer-note">
-        Results can be imported into the <a href="https://jpd236.github.io/kotwords/acrostic.html" target="_blank" rel="noopener">Kotwords acrostic JPZ generator.</a>
-      </div>
+            <div class="word-list-visual" id="word-list-visual"></div>
+            <pre id="output"></pre>
+
+            <div class="export-banner">
+              <span>Ready to make a JPZ?</span>
+              <a href="https://jpd236.github.io/kotwords/acrostic.html" target="_blank" rel="noopener">
+                Open Kotwords →
+              </a>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
 
-    <!-- Load the main acrostic JS -->
+    <!-- Scripts -->
     <script src="acrostic.js"></script>
-    <!-- Options & wordlist modal -->
     <script src="options.js"></script>
   </body>
 </html>

@@ -30,7 +30,7 @@
         ${content}
       </div>
       <div class="modal-footer">
-        <button type="button" class="modal-button" id="modal-button">${buttonText}</button>
+        <button type="button" class="btn-secondary" id="modal-button">${buttonText}</button>
       </div>
     </div>`;
 
@@ -42,7 +42,7 @@
     document.getElementById('modal-button').onclick = closeModalBox;
 
     window.onclick = function (event) {
-      if (event === modal) {
+      if (event.target === modal) {
         closeModalBox();
       }
     };
