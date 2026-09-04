@@ -70,8 +70,8 @@
       const buf = await resp.arrayBuffer();
 
       loadingText.textContent = 'Decompressing wordlist...';
-      const compressed = new Uint8Array(buf);
-      const dictText = pako.ungzip(compressed, { to: 'string' });
+      const decompressed = fflate.gunzipSync(new Uint8Array(buf));
+      const dictText = fflate.strFromU8(decompressed);
 
       loadingText.textContent = 'Initializing HiGHS solver...';
       worker.postMessage({ type: 'set_wordlist', text: dictText });
