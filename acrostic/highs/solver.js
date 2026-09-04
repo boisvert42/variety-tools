@@ -285,8 +285,8 @@
     let chosenReducedWords = [];
     if (sourceAlpha2.length > 0) {
       const meanLen = quoteAlpha2.length / sourceAlpha2.length;
-      const minLen = Math.max(1, Math.floor(meanLen - lenDistance));
-      const maxLen = Math.ceil(meanLen + lenDistance);
+      const minLen = Math.max(1, Math.ceil(meanLen - lenDistance));
+      const maxLen = Math.max(minLen, Math.floor(meanLen + lenDistance));
       const excludedSet = new Set(excludedWords);
 
       const candidates = filterCandidates(
