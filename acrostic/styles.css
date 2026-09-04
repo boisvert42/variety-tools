@@ -24,6 +24,7 @@
   --color-success: #059669;
   --color-success-light: #ecfdf5;
   --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
   --color-danger-light: #fef2f2;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -315,6 +316,24 @@ button {
   border-color: #cbd5e1;
 }
 
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+  border: none;
+  flex: 1;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.btn-danger:hover {
+  background-color: var(--color-danger-hover);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+}
+
 /* Results Card */
 .results-card {
   display: none;
@@ -363,6 +382,26 @@ button {
 .copy-btn:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
+}
+
+.solving-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 0;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.mini-spinner {
+  border: 2.5px solid var(--color-border);
+  border-top: 2.5px solid var(--color-primary);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 0.8s linear infinite;
 }
 
 .word-list-visual {

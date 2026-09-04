@@ -7,12 +7,16 @@
   let isSolving = false;
   let solveResolve = null;
   let defaultDictText = '';
+  let activeDictText = '';
   let currentSolution = [];
+  let solveStartTime = 0;
+  let solveTimerInterval = null;
 
   const spinner = document.getElementById('spinner');
   const loadingText = document.getElementById('loading-text');
   const controls = document.getElementById('controls');
   const solveBtn = document.getElementById('solve-btn');
+  const abortBtn = document.getElementById('abort-btn');
   const quoteInput = document.getElementById('quote-input');
   const sourceInput = document.getElementById('source-input');
   const quoteCount = document.getElementById('quote-count');
@@ -41,6 +45,27 @@
   quoteInput.addEventListener('input', updateCounters);
   sourceInput.addEventListener('input', updateCounters);
 
+  // Live Timer during solving
+  function startProgressTimer() {
+    solveStartTime = Date.now();
+    updateTimerDisplay();
+    solveTimerInterval = setInterval(updateTimerDisplay, 100);
+  }
+
+  function updateTimerDisplay() {
+    const elapsed = ((Date.now() - solveStartTime) / 1000).toFixed(1);
+    if (timeBadge) {
+      timeBadge.textContent = `⏱️ ${elapsed}s`;
+    }
+  }
+
+  function stopProgressTimer() {
+    if (solveTimerInterval) {
+      clearInterval(solveTimerInterval);
+      solveTimerInterval = null;
+    }
+  }
+
   // Initialize Web Worker
   function initWorker() {
     worker = new Worker('highs/worker.js');
@@ -56,11 +81,14 @@
         if (loadingText) loadingText.style.display = 'none';
         if (controls) controls.style.display = 'block';
       } else if (msg.type === 'progress') {
-        if (isSolving && solveBtn) {
-          solveBtn.querySelector('span').textContent = msg.message;
+        const phaseEl = document.getElementById('solving-phase-text');
+        if (phaseEl) {
+          phaseEl.textContent = msg.message;
         }
       } else if (msg.type === 'result') {
+        stopProgressTimer();
         isSolving = false;
+        if (abortBtn) abortBtn.style.display = 'none';
         solveBtn.disabled = false;
         solveBtn.querySelector('span').textContent = 'Create Acrostic';
 
@@ -82,12 +110,14 @@
 
   // Options support
   window.setCustomWordlist = function (text) {
+    activeDictText = text;
     if (worker) {
       worker.postMessage({ type: 'set_wordlist', text: text });
     }
   };
 
   window.resetDefaultWordlist = function () {
+    activeDictText = defaultDictText;
     if (worker && defaultDictText) {
       worker.postMessage({ type: 'set_wordlist', text: defaultDictText });
     }
@@ -106,6 +136,7 @@
       const decompressed = fflate.gunzipSync(new Uint8Array(buf));
       const dictText = fflate.strFromU8(decompressed);
       defaultDictText = dictText;
+      activeDictText = dictText;
 
       loadingText.textContent = 'Initializing HiGHS solver...';
       worker.postMessage({ type: 'set_wordlist', text: dictText });
@@ -113,6 +144,44 @@
       console.error('Initialization error:', err);
       loadingText.textContent = 'Failed to load dictionary: ' + err.message;
     }
+  }
+
+  // Handle Abort button click
+  if (abortBtn) {
+    abortBtn.addEventListener('click', () => {
+      if (!isSolving) return;
+
+      stopProgressTimer();
+      const elapsed = ((Date.now() - solveStartTime) / 1000).toFixed(1);
+
+      // Instantly terminate the blocked worker thread
+      if (worker) {
+        worker.terminate();
+        worker = null;
+      }
+
+      isSolving = false;
+      solveResolve = null;
+      abortBtn.style.display = 'none';
+      solveBtn.disabled = false;
+      solveBtn.querySelector('span').textContent = 'Create Acrostic';
+
+      timeBadge.textContent = `Aborted (${elapsed}s)`;
+      timeBadge.style.backgroundColor = 'var(--color-danger-light)';
+      timeBadge.style.color = 'var(--color-danger)';
+
+      wordListVisual.innerHTML = `
+        <div style="color: var(--color-text-muted); padding: 16px; text-align: center;">
+          Search cancelled by user after <strong>${elapsed}s</strong>.
+        </div>
+      `;
+
+      // Respawn worker and re-cache the active dictionary
+      initWorker();
+      if (activeDictText) {
+        worker.postMessage({ type: 'set_wordlist', text: activeDictText });
+      }
+    });
   }
 
   // Copy results to clipboard
@@ -164,14 +233,21 @@
     isSolving = true;
     solveBtn.disabled = true;
     solveBtn.querySelector('span').textContent = 'Solving...';
+    if (abortBtn) abortBtn.style.display = 'inline-flex';
 
-    // Show results section in pending state
+    // Show results section in pending state and start live timer
     resultsCard.style.display = 'block';
-    wordListVisual.innerHTML = '<div style="color: var(--color-text-muted); padding: 16px 0; text-align: center;">Searching for matching words...</div>';
-    timeBadge.textContent = 'Solving...';
+    wordListVisual.innerHTML = `
+      <div class="solving-indicator">
+        <div class="mini-spinner"></div>
+        <span id="solving-phase-text">Filtering candidate words...</span>
+      </div>
+    `;
     timeBadge.style.backgroundColor = 'var(--color-primary-light)';
     timeBadge.style.color = 'var(--color-primary)';
     if (copyBtn) copyBtn.style.display = 'none';
+
+    startProgressTimer();
 
     const solvePromise = new Promise((resolve) => {
       solveResolve = resolve;
