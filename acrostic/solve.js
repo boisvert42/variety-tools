@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Acrostic Solver CLI in Node.js using HiGHS WebAssembly
+ * Acrostic Solver CLI in Node.js using GLPK
  *
  * Usage:
  *   node solve.js -q "Quote text here" -s "Author Name" [-d 1] [-m 50]
@@ -23,7 +23,7 @@ Usage:
 Options:
   -q, --quote       Quote text (required)
   -s, --source      Source initials / author (required)
-  -d, --distance    Maximum length deviation from mean (default: 3)
+  -d, --distance    Maximum length deviation from mean (default: 1)
   -m, --minscore    Minimum dictionary word score (default: 50)
   -x, --excluded    Comma-separated words to exclude
   -i, --included    Comma-separated words to include
