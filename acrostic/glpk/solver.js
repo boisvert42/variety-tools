@@ -81,6 +81,10 @@
     const qctr = getLetterCounts(quoteAlpha);
     const totalQ = quoteAlpha.length;
 
+    // Remaining letters pool after reserving initials for source
+    const remainderPool = removeString(sourceAlpha, quoteAlpha);
+    const remCtr = getLetterCounts(remainderPool);
+
     const quoteFreq = {};
     let sumSqQ = 0;
     for (const ch in qctr) {
@@ -121,8 +125,17 @@
       if (!sctr[init]) continue;
       if (excludedSet && excludedSet.has(rawWord)) continue;
 
-      // Check substring of remainder in quote
-      if (!isSubstring(rawWord.slice(1), quoteAlpha)) continue;
+      // Check substring of remainder in available remainder pool (quote minus source initials)
+      const remainder = rawWord.slice(1);
+      const wc = getLetterCounts(remainder);
+      let fits = true;
+      for (const ch in wc) {
+        if ((remCtr[ch] || 0) < wc[ch]) {
+          fits = false;
+          break;
+        }
+      }
+      if (!fits) continue;
 
       const fit = letterFitScore(rawWord, quoteFreq, normQ);
       candidatesByInitial[init].push({ word: rawWord, fit: fit });
