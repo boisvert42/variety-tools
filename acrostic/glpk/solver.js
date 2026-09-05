@@ -138,16 +138,15 @@
       if (!fits) continue;
 
       const fit = letterFitScore(rawWord, quoteFreq, normQ);
-      candidatesByInitial[init].push({ word: rawWord, fit: fit });
+      candidatesByInitial[init].push({ word: rawWord, fit: fit, score: rawScore });
     }
 
-    // Collect candidates (with optional top-k pruning per letter)
+    // Collect candidates (with optional density pruning per letter)
     const resultWords = [];
     for (const init in candidatesByInitial) {
       let list = candidatesByInitial[init];
       if (maxCandidatesPerLetter && list.length > maxCandidatesPerLetter) {
-        list.sort((a, b) => b.fit - a.fit);
-        list = list.slice(0, maxCandidatesPerLetter);
+        list = pruneCandidatesByDensity(list, maxCandidatesPerLetter);
       }
       for (let i = 0; i < list.length; i++) {
         resultWords.push(list[i].word);
@@ -155,6 +154,72 @@
     }
 
     return resultWords;
+  }
+
+  /**
+   * Deterministic 32-bit string hash returning a float in (0, 1)
+   */
+  function stringHash(str) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return (h + 1) / 4294967297;
+  }
+
+  /**
+   * Prune candidate words using deterministic density-weighted reservoir sampling.
+   * Words farther from the letter centroid have higher probability of retention,
+   * thinning out generic crowded words while preserving rare letter combinations.
+   */
+  function pruneCandidatesByDensity(list, maxK) {
+    if (!maxK || list.length <= maxK) return list;
+
+    const N = list.length;
+    const vectors = new Array(N);
+    const centroid = {};
+
+    for (let i = 0; i < N; i++) {
+      const counts = getLetterCounts(list[i].word);
+      vectors[i] = counts;
+      for (const ch in counts) {
+        centroid[ch] = (centroid[ch] || 0) + counts[ch];
+      }
+    }
+
+    let centroidNormSq = 0;
+    for (const ch in centroid) {
+      centroid[ch] /= N;
+      centroidNormSq += centroid[ch] * centroid[ch];
+    }
+    const centroidNorm = Math.sqrt(centroidNormSq) || 1e-9;
+
+    const scored = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const counts = vectors[i];
+      let dot = 0;
+      let normSq = 0;
+      for (const ch in counts) {
+        normSq += counts[ch] * counts[ch];
+        if (centroid[ch]) {
+          dot += counts[ch] * centroid[ch];
+        }
+      }
+      const normW = Math.sqrt(normSq) || 1e-9;
+      const cosSim = dot / (normW * centroidNorm);
+      const dist = Math.max(0.01, 1 - cosSim);
+
+      const scoreWeight = list[i].score ? list[i].score / 50 : 1.0;
+      const weight = dist * scoreWeight;
+
+      const u = stringHash(list[i].word);
+      const key = Math.pow(u, 1 / weight);
+      scored[i] = { candidate: list[i], key: key };
+    }
+
+    scored.sort((a, b) => b.key - a.key);
+    return scored.slice(0, maxK).map(x => x.candidate);
   }
 
   /**
@@ -342,6 +407,7 @@
     removeString,
     letterFitScore,
     filterCandidates,
+    pruneCandidatesByDensity,
     buildLpModel,
     createAcrostic
   };

@@ -23,15 +23,16 @@ Usage:
 Options:
   -q, --quote       Quote text (required)
   -s, --source      Source initials / author (required)
-  -d, --distance    Maximum length deviation from mean (default: 1)
+  -d, --distance    Maximum length deviation from mean (default: 2)
   -m, --minscore    Minimum dictionary word score (default: 50)
+  -c, --candidates  Maximum candidates per initial (default: unlimited)
   -x, --excluded    Comma-separated words to exclude
   -i, --included    Comma-separated words to include
   -w, --wordlist    Custom wordlist file (.txt, .dict, or .dict.gz)
   -h, --help        Show this help message
 
 Example:
-  node solve.js -q "The quick brown fox jumps over the lazy dog" -s "QuickDog" -d 3
+  node solve.js -q "The quick brown fox jumps over the lazy dog" -s "QuickDog" -d 3 -c 500
 `);
 }
 
@@ -39,8 +40,9 @@ function parseCommandLineArgs(argv) {
   const opts = {
     quote: '',
     source: '',
-    distance: 3,
+    distance: 2,
     minScore: 50,
+    maxCandidates: null,
     excluded: [],
     included: [],
     wordlist: ''
@@ -63,6 +65,9 @@ function parseCommandLineArgs(argv) {
       i++;
     } else if (arg === '-m' || arg === '--minscore') {
       opts.minScore = parseInt(val, 10);
+      i++;
+    } else if (arg === '-c' || arg === '--candidates') {
+      opts.maxCandidates = parseInt(val, 10);
       i++;
     } else if (arg === '-x' || arg === '--excluded') {
       opts.excluded = (val || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -120,7 +125,7 @@ async function solveAcrostic(quote, source, options = {}) {
     excluded: options.excluded || [],
     included: options.included || [],
     minScore: options.minScore !== undefined ? options.minScore : 50,
-    lenDistance: options.distance !== undefined ? options.distance : 1,
+    lenDistance: options.distance !== undefined ? options.distance : 2,
     maxCandidatesPerLetter: options.maxCandidatesPerLetter || null
   }, glpk);
 }
@@ -143,6 +148,7 @@ async function main() {
     const solution = await solveAcrostic(args.quote, args.source, {
       distance: args.distance,
       minScore: args.minScore,
+      maxCandidatesPerLetter: args.maxCandidates,
       excluded: args.excluded,
       included: args.included,
       wordlistPath: args.wordlist

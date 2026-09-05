@@ -10,6 +10,7 @@
   window.solverOptions = window.solverOptions || {
     lenDistance: 1,
     minScore: 50,
+    maxCandidatesPerLetter: null,
     wordlistName: 'Default (Spread The Wordlist)',
     isCustom: false
   };
@@ -88,6 +89,12 @@
       </label>
       <input type="number" id="min-score-input" min="0" max="100" step="1" value="${opts.minScore}" />
 
+      <label for="max-candidates-input" class="label-with-tip">
+        Max Candidates per Initial
+        <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Limits candidates per starting letter using density pruning to accelerate solving. Leave blank for unlimited.">ⓘ</span>
+      </label>
+      <input type="number" id="max-candidates-input" min="50" max="10000" step="50" placeholder="Unlimited (e.g. 500)" value="${opts.maxCandidatesPerLetter || ''}" />
+
       <label for="wordlist-file-input">Word list:</label>
       <div id="wordlist-status" style="margin-bottom: 8px; font-size: 0.85em; color: #444;">
         Active: <strong>${opts.wordlistName}</strong>
@@ -121,6 +128,7 @@
     document.getElementById('save-options-btn').addEventListener('click', () => {
       const lenInput = document.getElementById('len-distance-input');
       const scoreInput = document.getElementById('min-score-input');
+      const candInput = document.getElementById('max-candidates-input');
       const fileInput = document.getElementById('wordlist-file-input');
 
       const newLen = parseInt(lenInput.value, 10);
@@ -131,6 +139,11 @@
       const newScore = parseInt(scoreInput.value, 10);
       if (!isNaN(newScore)) {
         opts.minScore = newScore;
+      }
+
+      if (candInput) {
+        const val = parseInt(candInput.value, 10);
+        opts.maxCandidatesPerLetter = (!isNaN(val) && val > 0) ? val : null;
       }
 
       // Check if a new file was uploaded

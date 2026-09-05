@@ -261,7 +261,8 @@
       excluded: excluded,
       included: included,
       minScore: opts.minScore !== undefined ? opts.minScore : 50,
-      lenDistance: opts.lenDistance !== undefined ? opts.lenDistance : 3
+      lenDistance: opts.lenDistance !== undefined ? opts.lenDistance : 3,
+      maxCandidatesPerLetter: opts.maxCandidatesPerLetter || null
     });
 
     const result = await solvePromise;
