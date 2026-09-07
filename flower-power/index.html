@@ -134,6 +134,13 @@
             <option value="18" selected>18</option>
         </select>
   </div>
+  <div>
+      <label for="global_puzzle_type">Type:</label>
+        <select id="global_puzzle_type">
+            <option value="standard" selected>Standard (CW / CCW)</option>
+            <option value="variant">Variant (All CW: Outside-in / Inside-out)</option>
+        </select>
+  </div>
 </div>
 
 <div class="tab-container">
@@ -219,9 +226,9 @@
   </div>
 
   <div class="clues-grid">
-    <!-- Clockwise Clues -->
+    <!-- Box 1 Clues -->
     <div class="clue-box">
-      <h4>Clockwise</h4>
+      <h4 id="clues_box_1_title">Clockwise</h4>
       <div class="form-group">
         <label for="cw_clues">Clues (one per line)</label>
         <textarea id="cw_clues" rows="18"></textarea>
@@ -232,9 +239,9 @@
       </div>
     </div>
 
-    <!-- Counterclockwise Clues -->
+    <!-- Box 2 Clues -->
     <div class="clue-box">
-      <h4>Counterclockwise</h4>
+      <h4 id="clues_box_2_title">Counterclockwise</h4>
       <div class="form-group">
         <label for="ccw_clues">Clues (one per line)</label>
         <textarea id="ccw_clues" rows="18"></textarea>
@@ -268,10 +275,26 @@ function openTab(tabId) {
 // Update placeholders based on global settings
 function setupClueInputs() {
   const petals = parseInt(document.getElementById('global_petals').value);
-  document.getElementById('cw_clues').placeholder = `Enter ${petals} clockwise clues, one per line...`;
-  document.getElementById('cw_answers').placeholder = `Enter ${petals} clockwise answers, one per line...`;
-  document.getElementById('ccw_clues').placeholder = `Enter ${petals} counterclockwise clues, one per line...`;
-  document.getElementById('ccw_answers').placeholder = `Enter ${petals} counterclockwise answers, one per line...`;
+  const isVariant = document.getElementById('global_puzzle_type').value === 'variant';
+
+  const box1Title = document.getElementById('clues_box_1_title');
+  const box2Title = document.getElementById('clues_box_2_title');
+
+  if (isVariant) {
+    box1Title.innerText = `Outside-In (1–${petals})`;
+    box2Title.innerText = `Inside-Out (${petals + 1}–${2 * petals})`;
+    document.getElementById('cw_clues').placeholder = `Enter ${petals} outside-in clues (1–${petals}), one per line...`;
+    document.getElementById('cw_answers').placeholder = `Enter ${petals} outside-in answers (1–${petals}), one per line...`;
+    document.getElementById('ccw_clues').placeholder = `Enter ${petals} inside-out clues (${petals + 1}–${2 * petals}), one per line...`;
+    document.getElementById('ccw_answers').placeholder = `Enter ${petals} inside-out answers (${petals + 1}–${2 * petals}), one per line...`;
+  } else {
+    box1Title.innerText = 'Clockwise';
+    box2Title.innerText = 'Counterclockwise';
+    document.getElementById('cw_clues').placeholder = `Enter ${petals} clockwise clues, one per line...`;
+    document.getElementById('cw_answers').placeholder = `Enter ${petals} clockwise answers, one per line...`;
+    document.getElementById('ccw_clues').placeholder = `Enter ${petals} counterclockwise clues, one per line...`;
+    document.getElementById('ccw_answers').placeholder = `Enter ${petals} counterclockwise answers, one per line...`;
+  }
 }
 
 // Image upload to base64
@@ -288,6 +311,7 @@ function handleImageUpload(event) {
 // Generate VPuz JSON and trigger download
 function generateVpuz() {
   const petals = parseInt(document.getElementById('global_petals').value);
+  const isVariant = document.getElementById('global_puzzle_type').value === 'variant';
   const title = document.getElementById('vpuz_title').value;
   const author = document.getElementById('vpuz_author').value;
   const copyright = document.getElementById('vpuz_copyright').value;
@@ -303,26 +327,42 @@ function generateVpuz() {
   const ccwCluesLines = document.getElementById('ccw_clues').value.split('\n');
   const ccwAnswersLines = document.getElementById('ccw_answers').value.split('\n');
 
-  const cwClues = [];
-  const ccwClues = [];
+  const list1 = [];
+  const list2 = [];
   let solutionString = '';
 
   for (let i = 1; i <= petals; i++) {
-    const cwClue = (cwCluesLines[i - 1] || '').trim();
-    const cwAns = (cwAnswersLines[i - 1] || '').trim().toUpperCase();
-    const ccwClue = (ccwCluesLines[i - 1] || '').trim();
+    const clue1 = (cwCluesLines[i - 1] || '').trim();
+    const ans1 = (cwAnswersLines[i - 1] || '').trim().toUpperCase();
+    const clue2 = (ccwCluesLines[i - 1] || '').trim();
 
-    cwClues.push([i, cwClue]);
-    ccwClues.push([i, ccwClue]);
+    list1.push([i, clue1]);
+    list2.push([isVariant ? (petals + i) : i, clue2]);
 
     // Construct the solution string from all non-empty answers
     // but only from one list
-    solutionString += cwAns;
+    solutionString += ans1;
+  }
 
+  // If first list answers were empty, try using second list answers
+  if (!solutionString) {
+    for (let i = 1; i <= petals; i++) {
+      const ans2 = (ccwAnswersLines[i - 1] || '').trim().toUpperCase();
+      solutionString += ans2;
+    }
   }
 
   // Sort solution string (sorted letters)
   solutionString = solutionString.split('').sort().join('');
+
+  const clues = {};
+  if (isVariant) {
+    clues["Outside-In"] = list1;
+    clues["Inside-Out"] = list2;
+  } else {
+    clues["Clockwise"] = list1;
+    clues["Counterclockwise"] = list2;
+  }
 
   const vpuz = {
     "author": author,
@@ -330,10 +370,7 @@ function generateVpuz() {
     "copyright": copyright,
     "notes": notes,
     "solution-string": solutionString,
-    "clues": {
-      "Clockwise": cwClues,
-      "Counterclockwise": ccwClues
-    },
+    "clues": clues,
     "puzzle-image": puzzleImage
   };
 
@@ -363,6 +400,7 @@ function numberToWords(num) {
 function processChange(event) {
     const petals = parseInt(document.getElementById('global_petals').value);
     const word_length = parseInt(document.getElementById('global_word_length').value);
+    const isVariant = document.getElementById('global_puzzle_type').value === 'variant';
     const petal_thickness = parseInt(form.elements['petal_thickness'].value);
     const gravity = parseInt(form.elements['gravity'].value);
     const font_size = parseInt(form.elements['font_size'].value);
@@ -371,7 +409,11 @@ function processChange(event) {
     const notesTextarea = document.getElementById('vpuz_notes');
 
     // We can update the notes dynamically
-    notesTextarea.value = `The answer to each clue in this puzzle is ${numberToWords(word_length)} letters long and should be entered in a curve starting in the correspondingly numbered space on the outside and curving in towards the center of the flower. Each numbered space is the start of two answers, one curving clockwise and the other counterclockwise.`;
+    if (isVariant) {
+      notesTextarea.value = `The answer to each clue in this puzzle is ${numberToWords(word_length)} letters long and should be entered in a clockwise curve. Clues 1 through ${petals} curve from the outside in towards the center of the flower; clues ${petals + 1} through ${2 * petals} curve from the inside out towards the outer petals.`;
+    } else {
+      notesTextarea.value = `The answer to each clue in this puzzle is ${numberToWords(word_length)} letters long and should be entered in a curve starting in the correspondingly numbered space on the outside and curving in towards the center of the flower. Each numbered space is the start of two answers, one curving clockwise and the other counterclockwise.`;
+    }
 
     // update the displayed values
     document.getElementById('gravity-value').innerHTML = gravity;
@@ -379,11 +421,11 @@ function processChange(event) {
 
     var number_margin = 5;
 
-    var r = create_flower_power_svg(petals, word_length, petal_thickness, gravity, font_size, number_margin);
+    var r = create_flower_power_svg(petals, word_length, petal_thickness, gravity, font_size, number_margin, CANVAS_SIZE, MARGIN_SIZE, isVariant);
     document.getElementById('svg').innerHTML = r;
 
     // update batch file data
-    document.getElementById('batchData').value = generate_flower_power_batch(petals, word_length);
+    document.getElementById('batchData').value = generate_flower_power_batch(petals, word_length, isVariant);
 }
 
 // Event listeners for global inputs
@@ -392,6 +434,10 @@ document.getElementById('global_petals').addEventListener('change', () => {
   processChange();
 });
 document.getElementById('global_word_length').addEventListener('change', processChange);
+document.getElementById('global_puzzle_type').addEventListener('change', () => {
+  setupClueInputs();
+  processChange();
+});
 
 form.addEventListener('input', processChange);
 form.addEventListener('change', processChange);

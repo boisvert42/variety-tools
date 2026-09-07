@@ -130,13 +130,13 @@ def create_flower_power_svg(petals, word_length, petal_thickness, gravity, \
         x, y = rotate(x, y, 2*math.pi/petals)
 
     # Numbering Inside Petals
-    # Note: this doesn't quite work yet
     if inner_numbers:
         inner_radius = radius + 2 * (font_size + number_margin)
+        angle_offset = -0.5 if (word_length % 2 == 0) else 0.0
         x_in, y_in = 0, -inner_radius
         for i in range(petals):
-            x_i, y_i = rotate(x_in, y_in, 2*math.pi*i/petals)
-            ret += (f"<text x='{x_i}' y='{y_i}'>{petals + i+1}</text>")
+            x_i, y_i = rotate(x_in, y_in, 2 * math.pi * (i + angle_offset) / petals)
+            ret += f"<text x='{x_i}' y='{y_i}'>{petals + i+1}</text>\n"
 
     ret += "</svg>"
 

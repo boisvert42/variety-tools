@@ -145,12 +145,13 @@ function create_flower_power_svg(petals, word_length, petal_thickness, gravity,
   }
 
   // Inner numbers
-  // Note: this doesn't quite work yet
   if (inner_numbers) {
     let inner_radius = radius + 2 * (font_size + number_margin);
+    // When word_length is even, inner white spaces between black petals are offset by half a petal
+    let angle_offset = (word_length % 2 === 0) ? -0.5 : 0;
     let x_in = 0, y_in = -inner_radius;
     for (var i = 0; i < petals; i++) {
-      let [x_i, y_i] = rotate(x_in, y_in, 2 * Math.PI * i /petals);
+      let [x_i, y_i] = rotate(x_in, y_in, 2 * Math.PI * (i + angle_offset) / petals);
       ret += `<text x='${x_i}' y='${y_i}'>${petals + i + 1}</text>\n`;
     }
   }
@@ -159,10 +160,10 @@ function create_flower_power_svg(petals, word_length, petal_thickness, gravity,
   return ret;
 }
 
-function generate_flower_power_batch(petals, word_length) {
+function generate_flower_power_batch(petals, word_length, is_variant = false) {
   var arr = [];
 
-  // Clockwise
+  // Clockwise (Outside-in)
   for (var x = 0; x < petals; x++) {
     var s = [];
     for (var y = 0; y < word_length; y++) {
@@ -171,15 +172,28 @@ function generate_flower_power_batch(petals, word_length) {
     arr.push(s);
   }
 
-  // Counterclockwise
-  for (var p = 0; p < petals; p++) {
-    var s = [];
-    var x = p;
-    for (var y = 0; y < word_length; y++) {
-      s.push("c_" + x + "_" + y);
-      x = (x - 1 + petals) % petals;
+  if (!is_variant) {
+    // Counterclockwise
+    for (var p = 0; p < petals; p++) {
+      var s = [];
+      var x = p;
+      for (var y = 0; y < word_length; y++) {
+        s.push("c_" + x + "_" + y);
+        x = (x - 1 + petals) % petals;
+      }
+      arr.push(s);
     }
-    arr.push(s);
+  } else {
+    // Inside-out (all words flow clockwise)
+    // Clue (petals + 1 + p) curves outward clockwise and ends at outer petal (p + 1), i.e. cell c_p_0
+    for (var p = 0; p < petals; p++) {
+      var s = [];
+      for (var y = word_length - 1; y >= 0; y--) {
+        var x = (p - y + petals * word_length) % petals;
+        s.push("c_" + x + "_" + y);
+      }
+      arr.push(s);
+    }
   }
 
   var out = '';
