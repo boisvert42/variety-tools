@@ -32,11 +32,13 @@ if not IS_VARIANT:
         arr.append(s)
 else:
     # Inside-out (all words flow clockwise)
-    # Clue (NUM_PETALS + 1 + p) curves outward clockwise and ends at outer petal (p + 1), i.e. cell c_p_0
+    # Clue (NUM_PETALS + 1 + p) starts at inner petal (NUM_PETALS + 1 + p) and curves outward clockwise
+    offset = (WORD_LENGTH - 1) // 2
     for p in range(NUM_PETALS):
         s = []
+        p_end = (p + offset) % NUM_PETALS
         for y in range(WORD_LENGTH - 1, -1, -1):
-            x = (p - y + NUM_PETALS * WORD_LENGTH) % NUM_PETALS
+            x = (p_end - y + NUM_PETALS * WORD_LENGTH) % NUM_PETALS
             s.append(f"c_{x}_{y}")
         arr.append(s)
     

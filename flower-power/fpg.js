@@ -185,11 +185,13 @@ function generate_flower_power_batch(petals, word_length, is_variant = false) {
     }
   } else {
     // Inside-out (all words flow clockwise)
-    // Clue (petals + 1 + p) curves outward clockwise and ends at outer petal (p + 1), i.e. cell c_p_0
+    // Clue (petals + 1 + p) starts at inner petal (petals + 1 + p) and curves outward clockwise
+    var offset = Math.floor((word_length - 1) / 2);
     for (var p = 0; p < petals; p++) {
       var s = [];
+      var p_end = (p + offset) % petals;
       for (var y = word_length - 1; y >= 0; y--) {
-        var x = (p - y + petals * word_length) % petals;
+        var x = (p_end - y + petals * word_length) % petals;
         s.push("c_" + x + "_" + y);
       }
       arr.push(s);
