@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shapeshifters Puzzle Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Shapeshifters</h1>
+      <p class="subtitle">Grid construction and batch slot generator for the variety constructor</p>
+    </header>
+
+    <nav class="tabs-nav">
+      <button class="tab-button active" data-tab="batch-tab">Batch Generator</button>
+      <button class="tab-button" data-tab="ipuz-tab">
+        IPUZ Creator
+        <span class="badge">Coming Soon</span>
+      </button>
+    </nav>
+
+    <main>
+      <!-- TAB 1: BATCH GENERATOR -->
+      <section id="batch-tab" class="tab-content active">
+        <div class="card-grid">
+          <!-- Configuration Card -->
+          <div class="card">
+            <h2>1. Configuration</h2>
+            <div class="form-group">
+              <label for="size-input">
+                Staircase Size (<em>N</em>):
+                <span id="size-display" class="highlight-val">6</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="size-slider" min="3" max="10" value="6" step="1">
+                <input type="number" id="size-input" min="3" max="12" value="6">
+              </div>
+              <small class="helper-text">Defines a symmetric 1-step puzzle.</small>
+            </div>
+
+            <div class="stats-box">
+              <div class="stat-item">
+                <span class="stat-label">Short Words</span>
+                <span class="stat-value" id="stat-shorts">7 words &times; 6 letters</span>
+                <span class="stat-desc">(Horizontal push)</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Long Words</span>
+                <span class="stat-value" id="stat-longs">6 words &times; 7 letters</span>
+                <span class="stat-desc">(Vertical push)</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Total Letters</span>
+                <span class="stat-value" id="stat-letters">42 letters</span>
+                <span class="stat-desc">(21 per staircase half)</span>
+              </div>
+            </div>
+
+            <div class="form-group options-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="opt-comments" checked>
+                Include section comments in batch file
+              </label>
+            </div>
+
+            <!--
+            <div class="ingrid-hint">
+              <strong>Ingrid Solver Command:</strong>
+              <code>ingrid_core -b shapeshifter_batch.txt</code>
+            </div>
+            -->
+          </div>
+
+          <!-- Visual Grid Preview Card -->
+          <div class="card">
+            <div class="card-header-tabs">
+              <h2>2. Grid Visualizer</h2>
+              <div class="view-toggle">
+                <button class="toggle-btn active" data-view="base">Base Grid</button>
+                <button class="toggle-btn" data-view="shorts">Shorts (Horizontal)</button>
+                <button class="toggle-btn" data-view="longs">Longs (Vertical)</button>
+              </div>
+            </div>
+
+            <div class="grid-container" id="grid-container">
+              <!-- Dynamically populated via script.js -->
+            </div>
+
+            <div class="grid-legend">
+              <span class="legend-item"><span class="legend-color legend-ur"></span> Upper-Right Half</span>
+              <span class="legend-item"><span class="legend-color legend-ll"></span> Lower-Left Half</span>
+              <span class="legend-item"><span class="legend-color legend-blk"></span> Black Block</span>
+            </div>
+            <div id="hover-cell-info" class="cell-info-display">&nbsp;</div>
+          </div>
+        </div>
+
+        <!-- Output Card -->
+        <div class="card output-card">
+          <div class="output-header">
+            <div>
+              <h2>3. Batch File Output</h2>
+              <p class="helper-text">For use in <a href="https://crosswordnexus.github.io/variety-constructor/" target="_blank">the variety constructor</a>.</p>
+            </div>
+            <div class="output-actions">
+              <button id="copy-btn" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy to Clipboard
+              </button>
+              <button id="download-btn" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Download .txt
+              </button>
+            </div>
+          </div>
+          <textarea id="batch-output" readonly rows="16" spellcheck="false"></textarea>
+        </div>
+      </section>
+
+      <!-- TAB 2: IPUZ CREATOR (Placeholder for later) -->
+      <section id="ipuz-tab" class="tab-content">
+        <div class="card placeholder-card">
+          <div class="placeholder-icon">🧩</div>
+          <h2>IPUZ Creator</h2>
+          <p>This tab will allow you to import Ingrid's solved grid output, enter clues for the Shorts and Longs, and export a ready-to-solve <code>.ipuz</code> puzzle file.</p>
+          <p class="helper-text">Feature coming soon in the next update.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Variety Puzzle Tools &bull; Shapeshifters</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
