@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shapeshifters Puzzle Generator</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../utils/variety.css">
+  <script src="../utils/dupe-checker.min.js"></script>
+  <script src="../utils/variety.js"></script>
 </head>
 <body>
   <div class="container">
@@ -151,6 +154,10 @@ Slot 1: WORDONE
 Slot 2: WORDTWO
 ..."></textarea>
               <div id="solution-status" class="status-indicator">Waiting for solution input...</div>
+              <div style="margin-top: 0.75rem;">
+                <button type="button" class="btn btn-secondary" id="checkdupes-button-single">Check for dupes</button>
+              </div>
+              <div id="dupe-alert-container-single" style="display: none; margin-top: 0.75rem;"></div>
             </div>
           </div>
         </div>
@@ -267,6 +274,10 @@ Long 2 clue
             </div>
           </div>
           <div id="multi-total-words-status" class="status-indicator" style="margin-top: 1rem; font-size: 0.9rem;"></div>
+          <div style="margin-top: 0.75rem;">
+            <button type="button" class="btn btn-secondary" id="checkdupes-button-multi">Check for dupes</button>
+          </div>
+          <div id="dupe-alert-container-multi" style="display: none; margin-top: 0.75rem;"></div>
         </div>
 
         <!-- Clues Card -->
@@ -313,5 +324,6 @@ Long 2 clue
   </div>
 
   <script src="script.js"></script>
+  <script src="dupes.js"></script>
 </body>
 </html>
