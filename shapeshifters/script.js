@@ -536,7 +536,7 @@
         }
       }
       shortsList.push({
-        number: r + 1,
+        number: "•",
         clue: shortsClueTexts[r] || '',
         cells: cells
       });
@@ -555,7 +555,7 @@
         cells.push([c + 1, r + 2]);
       }
       longsList.push({
-        number: r + 1,
+        number: "•",
         clue: longsClueTexts[r] || '',
         cells: cells
       });
@@ -1013,7 +1013,7 @@
     for (let i = 0; i < allSlots.length; i++) {
       const slot = allSlots[i];
       clueEntries.push({
-        number: i + 1,
+        number: "•",
         clue: orderedClueTexts[i] || `(${slot.length})`,
         cells: slot.cells
       });
