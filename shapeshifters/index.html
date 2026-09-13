@@ -144,7 +144,7 @@
           <!-- Ingrid Solution Output Card -->
           <div class="card">
             <h2>2. Ingrid Solution Output</h2>
-            <p class="helper-text">Paste the solved slots from Ingrid or the variety constructor.</p>
+            <p class="helper-text">Paste the solved slots from Ingrid or the variety constructor. <strong>Separate multi-word phrases with spaces</strong> (e.g., <code>THE BEST</code>) to automatically generate <code>(7, 2 words)</code> tags.</p>
             <div class="form-group">
               <textarea id="ipuz-solution-input" rows="8" spellcheck="false" placeholder="Paste Ingrid output, e.g.:
 Slot 1: WORDONE
@@ -158,7 +158,7 @@ Slot 2: WORDTWO
         <!-- Clues Card -->
         <div class="card" style="margin-bottom: 1.5rem;">
           <h2>3. Clues</h2>
-          <p class="helper-text">Enter one clue per line. First <span id="clues-count-shorts">7</span> clues are for Shorts (<span id="clues-len-shorts">6</span> letters), followed by <span id="clues-count-longs">6</span> clues for Longs (<span id="clues-len-longs">7</span> letters).</p>
+          <p class="helper-text">Enter one clue per line. First <span id="clues-count-shorts">7</span> clues are for Shorts (<span id="clues-len-shorts">6</span> letters), followed by <span id="clues-count-longs">6</span> clues for Longs (<span id="clues-len-longs">7</span> letters). Length tags like <code>(6)</code> or <code>(7, 2 words)</code> will be automatically appended to the end of each clue.</p>
           <div class="form-group">
             <textarea id="ipuz-clues-input" rows="10" spellcheck="false" placeholder="Enter clues, one per line:
 Short 1 clue
@@ -223,7 +223,7 @@ Long 2 clue
         <!-- 4 Subgrid Solution Inputs Card -->
         <div class="card" style="margin-bottom: 1.5rem;">
           <h2>2. Subgrid Solution Outputs</h2>
-          <p class="helper-text" style="margin-bottom: 1rem;">Paste the solved words from Ingrid for each of the 4 staircase puzzles independently (48 words total).</p>
+          <p class="helper-text" style="margin-bottom: 1rem;">Paste the solved words from Ingrid for each of the 4 staircase puzzles (48 words total). <strong>Separate multi-word phrases with spaces</strong> (e.g., <code>THE BEST</code>) to automatically generate <code>(7, 2 words)</code> tags.</p>
 
           <div class="subgrid-inputs-grid">
             <div class="subgrid-input-box">
@@ -272,7 +272,7 @@ Long 2 clue
         <!-- Clues Card -->
         <div class="card" style="margin-bottom: 1.5rem;">
           <h2>3. All Clues (48 Total)</h2>
-          <p class="helper-text">Enter all 48 clues, one per line: 5 of length 4, 10 of length 5, 12 of length 6, 14 of length 7, and 7 of length 8.</p>
+          <p class="helper-text">Enter all 48 clues in order matching the subgrid slots (length 4, then 5, 6, 7, 8). Length tags like <code>(4)</code> or <code>(7, 2 words)</code> will be automatically appended to the end of each clue, and clues will be alphabetized by length group.</p>
           <div class="form-group">
             <textarea id="multi-clues-input" rows="12" spellcheck="false" placeholder="Enter all 48 clues, one per line:
 4-letter clue 1
@@ -288,18 +288,14 @@ Long 2 clue
           <div class="output-header">
             <div>
               <h2>4. 4-Set IPUZ Output</h2>
-              <div class="view-toggle" style="margin-top: 0.5rem;">
-                <button class="toggle-btn active" id="btn-multi-mode-easier" data-mode="easier">Easier Version</button>
-                <button class="toggle-btn" id="btn-multi-mode-harder" data-mode="harder">Harder Version</button>
-              </div>
-              <p class="helper-text" id="multi-mode-description" style="margin-top: 0.5rem;">
-                <strong>Easier:</strong> Clues in grid order.
+              <p class="helper-text" style="margin-top: 0.25rem;">
+                Clues grouped by length and alphabetized within each group, with <code>fakeclues</code> &amp; <code>realwords</code> enabled for Crossword Nexus.
               </p>
             </div>
             <div class="output-actions">
               <button id="multi-ipuz-download-btn" class="btn btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                <span id="multi-download-btn-label">Download 4-Set .ipuz</span>
+                Download 4-Set .ipuz
               </button>
               <button id="multi-ipuz-copy-btn" class="btn btn-secondary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>

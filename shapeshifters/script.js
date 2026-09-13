@@ -283,18 +283,47 @@
 
   // --- IPUZ CREATOR LOGIC ---
 
-  // Parse words from Ingrid output
+  // Helper functions for clue length tags
+  function getLengthTag(wordObj, defaultLen) {
+    const len = (wordObj && wordObj.length) ? wordObj.length : defaultLen;
+    const wc = (wordObj && wordObj.wordCount) ? wordObj.wordCount : 1;
+    return wc > 1 ? `(${len}, ${wc} words)` : `(${len})`;
+  }
+
+  function appendTagToClue(clueText, tag) {
+    if (!clueText || !clueText.trim()) return tag;
+    let cleaned = clueText.trim();
+    // Strip outer square brackets if present: "[Clue text]" -> "Clue text"
+    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+      cleaned = cleaned.slice(1, -1).trim();
+    }
+    // Remove any existing trailing tag like (4), (7, 2 words), (2 words), (2 wds.), etc.
+    cleaned = cleaned.replace(/\s*\(\s*(?:\d+[^)]*|\d+\s*w(?:or)?ds?\.?)\s*\)\s*$/i, '').trim();
+    return `${cleaned} ${tag}`;
+  }
+
+  // Parse words from Ingrid output (supports multi-word phrases separated by spaces)
   function parseSolutionWords(text, n) {
     if (!text || !text.trim()) return { shorts: [], longs: [], allWords: [] };
     const lines = text.split('\n');
     const words = [];
     for (const rawLine of lines) {
-      const line = rawLine.trim();
+      let line = rawLine.trim();
       if (!line || line.startsWith('#')) continue;
-      // Extract word from formats like "Slot 1: WORD" or just "WORD"
-      const match = line.match(/(?:slot\s*\d+\s*:\s*)?([A-Za-z]+)/i);
-      if (match && match[1] && match[1].length >= 2) {
-        words.push(match[1].toUpperCase());
+      // Strip "Slot 1:", "1. ", etc. and any trailing comments/scores
+      line = line.replace(/^(?:slot\s*\d+[\s\:\-]+|\d+[\.\:\-\)\s]+)/i, '').replace(/[;#].*$/, '').trim();
+      // Split on spaces or hyphens to extract words
+      const parts = line.split(/[\s\-]+/).filter(w => w.length > 0 && /^[A-Za-z]+$/.test(w));
+      if (parts.length > 0) {
+        const letters = parts.join('').toUpperCase();
+        if (letters.length >= 2) {
+          words.push({
+            raw: parts.join(' ').toUpperCase(),
+            letters: letters,
+            wordCount: parts.length,
+            length: letters.length
+          });
+        }
       }
     }
     const shortsCount = n + 1;
@@ -365,17 +394,20 @@
         // Check crossing consistency
         let mismatches = 0;
         for (let r = 0; r < n; r++) {
-          const longWord = solData.longs[r];
-          const shortULWord = solData.shorts[r];
-          const shortLRWord = solData.shorts[r + 1];
-          if (longWord && shortULWord && shortLRWord) {
+          const longObj = solData.longs[r];
+          const shortULObj = solData.shorts[r];
+          const shortLRObj = solData.shorts[r + 1];
+          if (longObj && shortULObj && shortLRObj) {
+            const longLetters = longObj.letters;
+            const ulShortLetters = shortULObj.letters;
+            const lrShortLetters = shortLRObj.letters;
             // UL overlap
-            const ulLong = longWord.slice(0, n - r);
-            const ulShort = shortULWord.slice(0, n - r);
+            const ulLong = longLetters.slice(0, n - r);
+            const ulShort = ulShortLetters.slice(0, n - r);
             if (ulLong !== ulShort) mismatches++;
             // LR overlap
-            const lrLong = longWord.slice(n - r);
-            const lrShort = shortLRWord.slice(shortLRWord.length - (r + 1));
+            const lrLong = longLetters.slice(n - r);
+            const lrShort = lrShortLetters.slice(lrShortLetters.length - (r + 1));
             if (lrLong !== lrShort) mismatches++;
           }
         }
@@ -448,27 +480,39 @@
     // Fill solution letters from shorts
     if (solData.shorts.length > 0) {
       for (let r = 0; r <= n; r++) {
-        const word = solData.shorts[r];
-        if (!word) continue;
+        const wordObj = solData.shorts[r];
+        if (!wordObj) continue;
+        const letters = wordObj.letters;
         let idx = 0;
         // Upper-Left part
         if (r < n) {
           for (let c = 0; c <= n - 1 - r; c++) {
-            if (idx < word.length) solution[r][c] = word[idx++];
+            if (idx < letters.length) solution[r][c] = letters[idx++];
           }
         }
         // Lower-Right part
         if (r > 0) {
           for (let c = n - r + 1; c <= n; c++) {
-            if (idx < word.length) solution[r][c] = word[idx++];
+            if (idx < letters.length) solution[r][c] = letters[idx++];
           }
         }
       }
     }
 
-    // Prepare clue texts depending on mode (Easier = original order, Harder = alphabetized)
-    let shortsClueTexts = [...cluesData.shortsClues];
-    let longsClueTexts = [...cluesData.longsClues];
+    // Prepare clue texts with length tags appended (e.g. "Clue text (6)" or "Clue text (6, 2 words)")
+    const shortsClueTexts = [];
+    for (let r = 0; r <= n; r++) {
+      const rawClue = cluesData.shortsClues[r] || '';
+      const tag = getLengthTag(solData.shorts[r], n);
+      shortsClueTexts.push(rawClue ? appendTagToClue(rawClue, tag) : tag);
+    }
+
+    const longsClueTexts = [];
+    for (let r = 0; r < n; r++) {
+      const rawClue = cluesData.longsClues[r] || '';
+      const tag = getLengthTag(solData.longs[r], n + 1);
+      longsClueTexts.push(rawClue ? appendTagToClue(rawClue, tag) : tag);
+    }
 
     if (currentIpuzMode === 'harder') {
       shortsClueTexts.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
@@ -702,15 +746,9 @@
   const multiTotalWordsStatus = document.getElementById('multi-total-words-status');
   const multiCluesInput = document.getElementById('multi-clues-input');
   const multiCluesStatus = document.getElementById('multi-clues-status');
-  const btnMultiModeEasier = document.getElementById('btn-multi-mode-easier');
-  const btnMultiModeHarder = document.getElementById('btn-multi-mode-harder');
-  const multiModeDescription = document.getElementById('multi-mode-description');
-  const multiDownloadBtnLabel = document.getElementById('multi-download-btn-label');
   const multiIpuzDownloadBtn = document.getElementById('multi-ipuz-download-btn');
   const multiIpuzCopyBtn = document.getElementById('multi-ipuz-copy-btn');
   const multiIpuzJsonOutput = document.getElementById('multi-ipuz-json-output');
-
-  let currentMultiIpuzMode = 'easier';
 
   // Subgrid layout specifications
   // Order: 4x5 (N=4), 5x6 (N=5), 6x7 (N=6), 7x8 (N=7)
@@ -721,33 +759,35 @@
     { id: 4, n: 7, name: '7x8', label: 'Bottom-Left', rOff: 7, cOff: 0, textarea: multiSubgrid4, status: multiStatus4, expectedWords: 15 }
   ];
 
-  // Parse clues for 4-Set (48 clues total)
+  // Helper to detect if a line is a section header (e.g. "# 4", "Shorts:", "Length 4")
+  function isHeaderLine(line) {
+    if (line.startsWith('#')) return true;
+    const trimmed = line.trim();
+    if (/^(?:shorts|longs)\s*:?$/i.test(trimmed)) return true;
+    if (/^(?:length\s*\d+|\d+[\s\-]*(?:letters?|words?)|subgrid\s*\d+)\s*:?$/i.test(trimmed)) return true;
+    return false;
+  }
+
+  // Parse clues for 4-Set (48 clues total in slot order)
   function parseMultiClues(text) {
-    if (!text || !text.trim()) {
-      return { 4: [], 5: [], 6: [], 7: [], 8: [], total: 0 };
-    }
+    if (!text || !text.trim()) return [];
     const rawLines = text.split('\n');
+    const cleanLines = [];
 
-    const cleanLines = rawLines
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith('#'))
-      .map(l => l.replace(/^\d+[\.\-\:\)\s]+\s*/, '').replace(/^\[\d+\]\s*/, '').replace(/^\(\d+\)\s*/, '').trim());
-
-    // Expected partition counts: 5 (len 4), 10 (len 5), 12 (len 6), 14 (len 7), 7 (len 8)
-    const c4 = cleanLines.slice(0, 5);
-    const c5 = cleanLines.slice(5, 15);
-    const c6 = cleanLines.slice(15, 27);
-    const c7 = cleanLines.slice(27, 41);
-    const c8 = cleanLines.slice(41, 48);
-
-    return {
-      4: c4,
-      5: c5,
-      6: c6,
-      7: c7,
-      8: c8,
-      total: cleanLines.length
-    };
+    for (const rawLine of rawLines) {
+      let line = rawLine.trim();
+      if (!line || isHeaderLine(line)) continue;
+      // Strip outer square brackets if present: "[Clue text]" -> "Clue text"
+      if (line.startsWith('[') && line.endsWith(']')) {
+        line = line.slice(1, -1).trim();
+      }
+      // Strip leading numbering: "1. ", "1: ", "1 - ", "1) ", "[1] ", "(1) "
+      line = line.replace(/^(?:\[\d+\]|\(\d+\)|\d+[\.\-\:\)\s])\s*/, '').trim();
+      if (line) {
+        cleanLines.push(line);
+      }
+    }
+    return cleanLines;
   }
 
   function generateMultiIpuz() {
@@ -776,14 +816,33 @@
       const solData = parseSolutionWords(text, cfg.n);
       totalWordsLoaded += solData.allWords.length;
 
-      // Update individual status
+      // Update individual status & check crossings
       if (cfg.status) {
         if (solData.allWords.length === 0) {
           cfg.status.className = 'status-indicator';
           cfg.status.textContent = 'Waiting for input...';
         } else if (solData.allWords.length === cfg.expectedWords) {
-          cfg.status.className = 'status-indicator status-ok';
-          cfg.status.textContent = `✓ ${solData.allWords.length}/${cfg.expectedWords} words loaded`;
+          let mismatches = 0;
+          for (let r = 0; r < cfg.n; r++) {
+            const longObj = solData.longs[r];
+            const shortULObj = solData.shorts[r];
+            const shortLRObj = solData.shorts[r + 1];
+            if (longObj && shortULObj && shortLRObj) {
+              const ulLong = longObj.letters.slice(0, cfg.n - r);
+              const ulShort = shortULObj.letters.slice(0, cfg.n - r);
+              if (ulLong !== ulShort) mismatches++;
+              const lrLong = longObj.letters.slice(cfg.n - r);
+              const lrShort = shortLRObj.letters.slice(shortLRObj.letters.length - (r + 1));
+              if (lrLong !== lrShort) mismatches++;
+            }
+          }
+          if (mismatches === 0) {
+            cfg.status.className = 'status-indicator status-ok';
+            cfg.status.textContent = `✓ ${solData.allWords.length}/${cfg.expectedWords} words loaded (crossings match)`;
+          } else {
+            cfg.status.className = 'status-indicator status-warn';
+            cfg.status.textContent = `⚠️ Loaded ${solData.allWords.length} words, but found ${mismatches} mismatching crossing(s)`;
+          }
         } else {
           cfg.status.className = 'status-indicator status-warn';
           cfg.status.textContent = `Loaded ${solData.allWords.length}/${cfg.expectedWords} words`;
@@ -816,17 +875,18 @@
       // Populate solution letters from subgrid shorts
       if (solData.shorts.length > 0) {
         for (let r = 0; r <= n; r++) {
-          const word = solData.shorts[r];
-          if (!word) continue;
+          const wordObj = solData.shorts[r];
+          if (!wordObj) continue;
+          const letters = wordObj.letters;
           let idx = 0;
           if (r < n) {
             for (let c = 0; c <= n - 1 - r; c++) {
-              if (idx < word.length) solution[r + R_off][c + C_off] = word[idx++];
+              if (idx < letters.length) solution[r + R_off][c + C_off] = letters[idx++];
             }
           }
           if (r > 0) {
             for (let c = n - r + 1; c <= n; c++) {
-              if (idx < word.length) solution[r + R_off][c + C_off] = word[idx++];
+              if (idx < letters.length) solution[r + R_off][c + C_off] = letters[idx++];
             }
           }
         }
@@ -846,7 +906,7 @@
       }
     }
 
-    // Build all 48 slots in exact Ingrid order:
+    // Build all 48 slots and corresponding solution word objects in exact Ingrid order:
     // 1. 4x5 Shorts (5 slots, len 4)
     // 2. 4x5 Longs (4 slots, len 5)
     // 3. 5x6 Shorts (6 slots, len 5)
@@ -856,11 +916,14 @@
     // 7. 7x8 Shorts (8 slots, len 7)
     // 8. 7x8 Longs (7 slots, len 8)
     const allSlots = [];
+    const allSolutionWords = [];
 
     SUBGRIDS_CONFIG.forEach(cfg => {
       const n = cfg.n;
       const R_off = cfg.rOff;
       const C_off = cfg.cOff;
+      const text = cfg.textarea ? cfg.textarea.value : '';
+      const solData = parseSolutionWords(text, n);
 
       // Shorts: n + 1 slots of length n
       for (let r = 0; r <= n; r++) {
@@ -876,6 +939,7 @@
           }
         }
         allSlots.push({ length: n, cells: cells });
+        allSolutionWords.push(solData.shorts[r] || null);
       }
 
       // Longs: n slots of length n + 1
@@ -888,52 +952,69 @@
           cells.push([c + C_off + 1, r + 1 + R_off + 1]);
         }
         allSlots.push({ length: n + 1, cells: cells });
+        allSolutionWords.push(solData.longs[r] || null);
       }
     });
 
     // Parse clues
     const cluesText = multiCluesInput ? multiCluesInput.value : '';
-    const parsedClues = parseMultiClues(cluesText);
+    const rawClues = parseMultiClues(cluesText);
 
     if (multiCluesStatus) {
-      if (parsedClues.total === 0) {
+      if (rawClues.length === 0) {
         multiCluesStatus.className = 'status-indicator';
         multiCluesStatus.textContent = 'Waiting for clues...';
-      } else if (parsedClues.total === 48) {
+      } else if (rawClues.length === 48) {
         multiCluesStatus.className = 'status-indicator status-ok';
         multiCluesStatus.textContent = '✓ All 48 clues loaded!';
+      } else if (rawClues.length < 48) {
+        const c4Count = Math.min(Math.max(0, rawClues.length), 5);
+        const c5Count = Math.min(Math.max(0, rawClues.length - 5), 10);
+        const c6Count = Math.min(Math.max(0, rawClues.length - 15), 12);
+        const c7Count = Math.min(Math.max(0, rawClues.length - 27), 14);
+        const c8Count = Math.min(Math.max(0, rawClues.length - 41), 7);
+        multiCluesStatus.className = 'status-indicator status-warn';
+        multiCluesStatus.textContent = `Loaded ${rawClues.length} / 48 clues (${c4Count}/5 len 4, ${c5Count}/10 len 5, ${c6Count}/12 len 6, ${c7Count}/14 len 7, ${c8Count}/7 len 8).`;
       } else {
         multiCluesStatus.className = 'status-indicator status-warn';
-        multiCluesStatus.textContent = `Loaded ${parsedClues.total} / 48 clues (${parsedClues[4].length}/5 len 4, ${parsedClues[5].length}/10 len 5, ${parsedClues[6].length}/12 len 6, ${parsedClues[7].length}/14 len 7, ${parsedClues[8].length}/7 len 8).`;
+        multiCluesStatus.textContent = `⚠️ Loaded ${rawClues.length} clues (expected 48; first 48 will be used).`;
       }
     }
 
-    // Clue text lists by length
-    const c4 = [...parsedClues[4]];
-    const c5 = [...parsedClues[5]];
-    const c6 = [...parsedClues[6]];
-    const c7 = [...parsedClues[7]];
-    const c8 = [...parsedClues[8]];
-
-    if (currentMultiIpuzMode === 'harder') {
-      c4.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      c5.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      c6.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      c7.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      c8.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    // Group clues by answer length (4, 5, 6, 7, 8)
+    // Slot lengths in allSlots: 5 of len 4, 10 of len 5, 12 of len 6, 14 of len 7, 7 of len 8
+    const buckets = { 4: [], 5: [], 6: [], 7: [], 8: [] };
+    for (let i = 0; i < allSlots.length; i++) {
+      const rawClue = rawClues[i] || '';
+      const wordObj = allSolutionWords[i];
+      const slotLen = allSlots[i].length;
+      const tag = getLengthTag(wordObj, slotLen);
+      const taggedClue = rawClue ? appendTagToClue(rawClue, tag) : tag;
+      if (buckets[slotLen]) {
+        buckets[slotLen].push(taggedClue);
+      }
     }
 
-    // In both Easier and Harder, clues are arranged by length: 4s, 5s, 6s, 7s, 8s
-    const orderedClueTexts = [...c4, ...c5, ...c6, ...c7, ...c8];
+    // Alphabetize clues within each length group
+    [4, 5, 6, 7, 8].forEach(len => {
+      buckets[len].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    });
+
+    // Flatten in ascending length order: 4s, then 5s, then 6s, then 7s, then 8s
+    const orderedClueTexts = [
+      ...buckets[4],
+      ...buckets[5],
+      ...buckets[6],
+      ...buckets[7],
+      ...buckets[8]
+    ];
 
     const clueEntries = [];
     for (let i = 0; i < allSlots.length; i++) {
       const slot = allSlots[i];
-      const rawText = orderedClueTexts[i] || '';
-      const clueText = rawText ? `(${slot.length}) ${rawText}` : `(${slot.length})`;
       clueEntries.push({
         number: i + 1,
-        clue: clueText,
+        clue: orderedClueTexts[i] || `(${slot.length})`,
         cells: slot.cells
       });
     }
@@ -947,49 +1028,18 @@
       },
       title: title,
       author: author,
-      copyright: copyright
-    };
-
-    if (currentMultiIpuzMode === 'harder') {
-      multiIpuzData.fakeclues = 'true';
-      multiIpuzData.realwords = 'true';
-    }
-
-    multiIpuzData.puzzle = puzzle;
-    multiIpuzData.solution = solution;
-    multiIpuzData.clues = {
-      'Clues': clueEntries
+      copyright: copyright,
+      fakeclues: 'true',
+      realwords: 'true',
+      puzzle: puzzle,
+      solution: solution,
+      clues: {
+        'Clues': clueEntries
+      }
     };
 
     multiIpuzJsonOutput.value = JSON.stringify(multiIpuzData, null, 2);
     return multiIpuzData;
-  }
-
-  // 4-Set Mode switching
-  if (btnMultiModeEasier) {
-    btnMultiModeEasier.addEventListener('click', () => {
-      currentMultiIpuzMode = 'easier';
-      btnMultiModeEasier.classList.add('active');
-      if (btnMultiModeHarder) btnMultiModeHarder.classList.remove('active');
-      if (multiModeDescription) {
-        multiModeDescription.innerHTML = '<strong>Easier:</strong> Clues in grid order.';
-      }
-      if (multiDownloadBtnLabel) multiDownloadBtnLabel.textContent = 'Download 4-Set .ipuz';
-      generateMultiIpuz();
-    });
-  }
-
-  if (btnMultiModeHarder) {
-    btnMultiModeHarder.addEventListener('click', () => {
-      currentMultiIpuzMode = 'harder';
-      btnMultiModeHarder.classList.add('active');
-      if (btnMultiModeEasier) btnMultiModeEasier.classList.remove('active');
-      if (multiModeDescription) {
-        multiModeDescription.innerHTML = '<strong>Harder:</strong> Alphabetized clues by length with <code>fakeclues</code> & <code>realwords</code>.';
-      }
-      if (multiDownloadBtnLabel) multiDownloadBtnLabel.textContent = 'Download Harder 4-Set .ipuz';
-      generateMultiIpuz();
-    });
   }
 
   // 4-Set Event Listeners
@@ -1038,12 +1088,11 @@
       if (!ipuzObj) return;
       const jsonText = JSON.stringify(ipuzObj, null, 2);
       const titleSlug = (ipuzObj.title || 'shapeshifters_set').toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const suffix = currentMultiIpuzMode === 'harder' ? '_harder' : '_easier';
       const blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${titleSlug}${suffix}.ipuz`;
+      a.download = `${titleSlug}.ipuz`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
