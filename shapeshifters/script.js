@@ -287,7 +287,16 @@
   function getLengthTag(wordObj, defaultLen) {
     const len = (wordObj && wordObj.length) ? wordObj.length : defaultLen;
     const wc = (wordObj && wordObj.wordCount) ? wordObj.wordCount : 1;
-    return wc > 1 ? `(${len}, ${wc} words)` : `(${len})`;
+    const hasHyph = (wordObj && wordObj.hasHyphen) ? true : false;
+
+    const parts = [len];
+    if (wc > 1) {
+      parts.push(`${wc} words`);
+    }
+    if (hasHyph) {
+      parts.push('hyph.');
+    }
+    return `(${parts.join(', ')})`;
   }
 
   function appendTagToClue(clueText, tag) {
@@ -297,12 +306,12 @@
     if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
       cleaned = cleaned.slice(1, -1).trim();
     }
-    // Remove any existing trailing tag like (4), (7, 2 words), (2 words), (2 wds.), etc.
-    cleaned = cleaned.replace(/\s*\(\s*(?:\d+[^)]*|\d+\s*w(?:or)?ds?\.?)\s*\)\s*$/i, '').trim();
+    // Remove any existing trailing tag like (4), (7, 2 words), (12, 2 words, hyph.), (6, hyph.), etc.
+    cleaned = cleaned.replace(/\s*\(\s*(?:\d+[^)]*|\d+\s*w(?:or)?ds?\.?|hyph\.?)\s*\)\s*$/i, '').trim();
     return `${cleaned} ${tag}`;
   }
 
-  // Parse words from Ingrid output (supports multi-word phrases separated by spaces)
+  // Parse words from Ingrid output (supports multi-word phrases separated by spaces and hyphenated words)
   function parseSolutionWords(text, n) {
     if (!text || !text.trim()) return { shorts: [], longs: [], allWords: [] };
     const lines = text.split('\n');
@@ -312,15 +321,25 @@
       if (!line || line.startsWith('#')) continue;
       // Strip "Slot 1:", "1. ", etc. and any trailing comments/scores
       line = line.replace(/^(?:slot\s*\d+[\s\:\-]+|\d+[\.\:\-\)\s]+)/i, '').replace(/[;#].*$/, '').trim();
-      // Split on spaces or hyphens to extract words
-      const parts = line.split(/[\s\-]+/).filter(w => w.length > 0 && /^[A-Za-z]+$/.test(w));
-      if (parts.length > 0) {
-        const letters = parts.join('').toUpperCase();
+      if (!line) continue;
+
+      // Detect if entry contains a hyphen connecting letters (e.g. "SEE-SAW" or "T-SHIRT")
+      const hasHyphen = /[A-Za-z]\s*-\s*[A-Za-z]/.test(line);
+
+      // Normalize hyphen spacing: "SEE - SAW" -> "SEE-SAW"
+      const normalizedLine = line.replace(/([A-Za-z])\s*-\s*([A-Za-z])/g, '$1-$2');
+
+      // Separate words by whitespace
+      const tokens = normalizedLine.split(/\s+/).filter(t => /[A-Za-z]/.test(t));
+      if (tokens.length > 0) {
+        // Extract raw letters for grid filling (excluding spaces and hyphens)
+        const letters = normalizedLine.replace(/[^A-Za-z]/g, '').toUpperCase();
         if (letters.length >= 2) {
           words.push({
-            raw: parts.join(' ').toUpperCase(),
+            raw: tokens.join(' ').toUpperCase(),
             letters: letters,
-            wordCount: parts.length,
+            wordCount: tokens.length,
+            hasHyphen: hasHyphen,
             length: letters.length
           });
         }
