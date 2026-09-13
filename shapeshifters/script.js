@@ -47,7 +47,7 @@
     });
   });
 
-  // Generate slot definitions
+  // Generate slot definitions (SW to NE diagonal: r + c = n)
   function generateSlots(n) {
     const shorts = [];
     const longs = [];
@@ -55,42 +55,44 @@
     // Cell mapping to check memberships
     const cellMap = {};
 
-    // 1. Shorts: Horizontal push (UR slides left by 1)
+    // 1. Shorts: Horizontal push (LR slides left by 1)
     // Produces (n + 1) words of length n
     for (let r = 0; r <= n; r++) {
       const slot = [];
-      if (r > 0) {
-        for (let c = 0; c < r; c++) {
+      // Upper-Left part (cols 0 .. n-1-r)
+      if (r < n) {
+        for (let c = 0; c <= n - 1 - r; c++) {
           const id = `r${r}c${c}`;
           slot.push(id);
-          if (!cellMap[id]) cellMap[id] = { id, row: r, col: c, part: 'LL' };
+          if (!cellMap[id]) cellMap[id] = { id, row: r, col: c, part: 'UL' };
           cellMap[id].shortIdx = r + 1;
         }
       }
-      if (r < n) {
-        for (let c = r + 1; c <= n; c++) {
+      // Lower-Right part (cols n-r+1 .. n)
+      if (r > 0) {
+        for (let c = n - r + 1; c <= n; c++) {
           const id = `r${r}c${c}`;
           slot.push(id);
-          if (!cellMap[id]) cellMap[id] = { id, row: r, col: c, part: 'UR' };
+          if (!cellMap[id]) cellMap[id] = { id, row: r, col: c, part: 'LR' };
           cellMap[id].shortIdx = r + 1;
         }
       }
       shorts.push(slot);
     }
 
-    // 2. Longs: Vertical push (LL slides up by 1)
+    // 2. Longs: Vertical push (LR slides up by 1)
     // Produces n words of length (n + 1)
     for (let r = 0; r < n; r++) {
       const slot = [];
-      // LL row r+1 (cols 0..r)
-      for (let c = 0; c <= r; c++) {
-        const id = `r${r + 1}c${c}`;
+      // UL row r: cols 0 .. n-1-r
+      for (let c = 0; c <= n - 1 - r; c++) {
+        const id = `r${r}c${c}`;
         slot.push(id);
         cellMap[id].longIdx = r + 1;
       }
-      // UR row r (cols r+1..n)
-      for (let c = r + 1; c <= n; c++) {
-        const id = `r${r}c${c}`;
+      // LR row r+1: cols n-r .. n
+      for (let c = n - r; c <= n; c++) {
+        const id = `r${r + 1}c${c}`;
         slot.push(id);
         cellMap[id].longIdx = r + 1;
       }
@@ -154,20 +156,20 @@
           const cell = document.createElement('div');
           cell.className = 'puzzle-cell';
 
-          if ((r === 0 && c === 0) || (r === n && c === n)) {
+          if ((r === 0 && c === n) || (r === n && c === 0)) {
             cell.classList.add('cell-void');
-          } else if (r === c && r > 0 && r < n) {
+          } else if (r + c === n && r > 0 && r < n) {
             cell.classList.add('cell-blk');
             cell.title = `Block (r${r}c${c})`;
-          } else if (c > r) {
-            // Upper-Right
+          } else if (r + c < n) {
+            // Upper-Left
             const id = `r${r}c${c}`;
-            cell.classList.add('cell-ur');
+            cell.classList.add('cell-ul');
             setupCellInteractions(cell, id, cellMap[id]);
           } else {
-            // Lower-Left
+            // Lower-Right
             const id = `r${r}c${c}`;
-            cell.classList.add('cell-ll');
+            cell.classList.add('cell-lr');
             setupCellInteractions(cell, id, cellMap[id]);
           }
 
@@ -179,12 +181,12 @@
       gridEl.style.gridTemplateColumns = `repeat(${n}, 28px)`;
       gridEl.style.gridTemplateRows = `repeat(${n + 1}, 28px)`;
 
-      shorts.forEach((slot, slotIdx) => {
+      shorts.forEach((slot) => {
         slot.forEach(cellId => {
           const info = cellMap[cellId];
           const cell = document.createElement('div');
           cell.className = 'puzzle-cell';
-          cell.classList.add(info.part === 'UR' ? 'cell-ur' : 'cell-ll');
+          cell.classList.add(info.part === 'UL' ? 'cell-ul' : 'cell-lr');
           setupCellInteractions(cell, cellId, info);
           gridEl.appendChild(cell);
         });
@@ -194,12 +196,12 @@
       gridEl.style.gridTemplateColumns = `repeat(${n + 1}, 28px)`;
       gridEl.style.gridTemplateRows = `repeat(${n}, 28px)`;
 
-      longs.forEach((slot, slotIdx) => {
+      longs.forEach((slot) => {
         slot.forEach(cellId => {
           const info = cellMap[cellId];
           const cell = document.createElement('div');
           cell.className = 'puzzle-cell';
-          cell.classList.add(info.part === 'UR' ? 'cell-ur' : 'cell-ll');
+          cell.classList.add(info.part === 'UL' ? 'cell-ul' : 'cell-lr');
           setupCellInteractions(cell, cellId, info);
           gridEl.appendChild(cell);
         });
