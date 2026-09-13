@@ -494,21 +494,53 @@ textarea#batch-output {
   white-space: pre;
 }
 
-/* Placeholder card for IPUZ */
-.placeholder-card {
-  text-align: center;
-  padding: 4rem 2rem;
+.text-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
 }
 
-.placeholder-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+.text-input:focus {
+  border-color: var(--primary-color);
 }
 
-.placeholder-card p {
+textarea#ipuz-solution-input,
+textarea#ipuz-clues-input,
+textarea#ipuz-json-output {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #1e293b;
+  background-color: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.85rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.status-indicator {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-weight: 500;
   color: var(--text-secondary);
-  max-width: 500px;
-  margin: 0.5rem auto;
+}
+
+.status-indicator.status-ok {
+  color: #16a34a;
+}
+
+.status-indicator.status-warn {
+  color: #d97706;
+}
+
+.status-indicator.status-error {
+  color: #dc2626;
 }
 
 footer {
