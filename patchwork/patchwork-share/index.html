@@ -640,7 +640,7 @@
 
         const encoded = js.serialize();
         // The `config` here is for notepad_name
-        const baseUrl = "https://crosswordnexus.github.io/html5-crossword-solver/?config=eyJub3RlcGFkX25hbWUiOiAiSG93IHRvIHBsYXkifQ";
+        const baseUrl = "https://crosswordnexus.com/eb/solve/?config=eyJub3RlcGFkX25hbWUiOiAiSG93IHRvIHBsYXkifQ";
         const playUrl = `${baseUrl}#${encoded}`;
         shareLink.value = playUrl;
         embedCode.value = `<iframe allowfullscreen="true" height="600" width="100%" style="border:none;width: 100% !important;position: static;display: block !important;margin: 0 !important;" src="${playUrl}"></iframe>`;
