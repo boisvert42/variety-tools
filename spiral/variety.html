@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Variety Spiral Construction</title>
+
+  <!-- Skeleton CSS for layout -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+
+  <!-- Custom common styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .gap-badge {
+      display: inline-block;
+      background-color: var(--primary-color, #6366f1);
+      color: #fff;
+      font-weight: 700;
+      padding: 2px 7px;
+      margin: 0 3px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      letter-spacing: 1px;
+    }
+    .status-panel {
+      background-color: var(--panel-bg, #334155);
+      border: 1px solid var(--border-color, #475569);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-family: monospace;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .status-panel .stream-text {
+      color: var(--accent-color, #818cf8);
+      font-weight: bold;
+      word-break: break-all;
+    }
+    .config-label {
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted, #cbd5e1);
+      margin-bottom: 4px;
+    }
+    .turn-indicator {
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .nav-links {
+      margin-bottom: 20px;
+    }
+    .nav-links a {
+      margin-right: 15px;
+    }
+    .word-chip {
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .file-input-wrapper {
+      display: inline-block;
+      margin-left: 10px;
+      font-size: 0.85em;
+    }
+    #dictStatus {
+      font-size: 0.9em;
+      color: var(--text-muted, #cbd5e1);
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Variety Spiral Construction</h2>
+
+    <div class="nav-links">
+      <a href="index.html">&larr; Standard Spiral</a>
+      <a href="crushword.html">Crushword Spiral</a>
+    </div>
+
+    <p>
+      Inward words enter with no gaps (<strong>N</strong> words total). Outward words are separated by 
+      single-letter gaps that spell out the secret word <strong>W</strong>.
+    </p>
+
+    <!-- Configuration Row -->
+    <div class="row">
+      <div class="two columns">
+        <label class="config-label" for="paramN">Forward Words (N)</label>
+        <input class="u-full-width" type="number" id="paramN" min="1" max="10" value="2">
+      </div>
+      <div class="three columns">
+        <label class="config-label" for="paramW">Secret Gap Word (W)</label>
+        <input class="u-full-width" type="text" id="paramW" value="TO" style="text-transform: uppercase;">
+      </div>
+      <div class="two columns">
+        <label class="config-label" for="minScore">Min Score</label>
+        <input class="u-full-width" type="number" id="minScore" value="50" step="5">
+      </div>
+      <div class="five columns" style="padding-top: 24px;">
+        <button class="button-primary" type="button" id="btnRestart" onclick="startNewPuzzle()">Reset / Start</button>
+        <button class="button" type="button" onclick="undoLast()">Undo</button>
+        <span id="dictStatus">Initializing...</span>
+      </div>
+    </div>
+
+    <!-- Wordlist loader row if needed -->
+    <div class="row" style="margin-bottom: 15px;">
+      <div class="twelve columns">
+        <span style="font-size: 0.85em; color: var(--text-muted);">Wordlist: </span>
+        <input type="file" id="dictFileInput" accept=".dict,.txt,.json" style="display:inline-block; font-size:0.85em; padding: 2px;">
+      </div>
+    </div>
+
+    <!-- Active Spiral State Panels -->
+    <div class="row">
+      <div class="six columns">
+        <label for="inwardWordsDisplay" id="inwardHeader">Inward Words (0 / 2)</label>
+        <div class="status-panel" id="inwardWordsDisplay">
+          <em>None yet</em>
+        </div>
+      </div>
+
+      <div class="six columns">
+        <label for="outwardWordsDisplay" id="outwardHeader">Outward Words (0 / 3)</label>
+        <div class="status-panel" id="outwardWordsDisplay">
+          <em>None yet</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alignment and Stream Visualizer -->
+    <div class="row">
+      <div class="twelve columns">
+        <div class="status-panel" style="background-color: var(--input-bg, #0f172a);">
+          <div><strong>Turn: </strong><span id="turnMsg" class="turn-indicator">Pick first Inward word</span></div>
+          <div><strong>Forward Stream: </strong><span id="fwdStream" class="stream-text">-</span></div>
+          <div><strong>Backward Stream: </strong><span id="bwdStream" class="stream-text">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidates Table -->
+    <div class="row">
+      <div id="datatables-table-div" class="twelve columns">
+        <table id="datatables-table" class="display" style="width:100%">
+          <thead>
+            <tr>
+              <th>Direction</th>
+              <th>Candidate Word</th>
+              <th>Length</th>
+              <th>Leftover / Matching</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+        <p style="margin-top: 10px; color: var(--text-muted);">
+          Click any row to select that word. The generator will advance the stream, absorb any gap letters, and show viable next options.
+        </p>
+      </div>
+    </div> <!-- end table row -->
+  </div> <!-- end container -->
+
+  <!-- Load jQuery and DataTables -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+  <!-- Variety Spiral Logic -->
+  <script src="variety_spiral.js"></script>
+</body>
+</html>
